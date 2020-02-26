@@ -114,7 +114,7 @@ module.exports.login = async (req, res, next) => {
             error.statusCode = 401;
             return next(error);
         }
-        const token = 'Bearer ' + jwt.sign({ email: email, userId: user._id }, process.env.JWT_SECRET, { expiresIn: '2h' });
+        const token = 'Bearer ' + jwt.sign({ email: email, userId: user._id, companyId: get(user, 'companyId') }, process.env.JWT_SECRET, { expiresIn: '2h' });
         res.status(200).json({ message: "Log in success", token, userId: user._id });
     } catch (error) {
         error.statusCode = 500;
