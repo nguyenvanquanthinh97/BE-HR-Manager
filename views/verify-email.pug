@@ -1,0 +1,32 @@
+doctype html
+html
+    head
+      style(type="text/css").
+        .btn-blue {
+          -webkit-border-radius: 5px;
+          -moz-border-radius: 5px;
+          border-radius: 5px;
+          color: #FFFFFF;
+          font-family: Open Sans;
+          padding: 10px;
+          background-color: #253069;
+          text-decoration: none;
+          display: inline-block;
+          cursor: pointer;
+        }
+        .banner {
+          width: '10rem';
+          height: '10rem';
+          margin: auto;
+        }
+        .banner-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+    
+    body
+        h1 Hello, #{username}
+        h5 Please click below button to verify your account, Thanks
+        a.btn-blue(href=verifyUrl, target="_blank") Verify Account
+        br
