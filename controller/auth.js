@@ -4,9 +4,11 @@ const EmailTemplate = require('email-templates');
 const sgMail = require('@sendgrid/mail');
 const { ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const User = require('../model/user');
 const Company = require('../model/company');
+const BlackList = require('../model/black-lists');
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -77,6 +79,54 @@ module.exports.verifyEmail = async (req, res, next) => {
         }
         await Company.updateByUserId(userId, { verify: true });
         res.status(202).json({ message: "Verify Success" });
+    } catch (error) {
+        error.statusCode = 500;
+        return next(error);
+    }
+};
+
+module.exports.login = async (req, res, next) => {
+    const email = get(req.body, 'email');
+    const password = get(req.body, 'password');
+
+    const schema = Joi.object().keys({
+        email: Joi.string().trim().email().required(),
+        password: Joi.string().required()
+    });
+
+    const { error, value } = schema.validate({ email, password });
+
+    if (error) {
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    try {
+        const user = await User.findByEmail(get(value, 'email'));
+        if (!user) {
+            const error = new Error("Invalid Email or Password");
+            error.statusCode = 401;
+            return next(error);
+        }
+        const result = await bcrypt.compare(get(value, 'password'), get(user, 'password'));
+        if (!result) {
+            const error = new Error("Invalid Email or Password");
+            error.statusCode = 401;
+            return next(error);
+        }
+        const token = 'Bearer ' + jwt.sign({ email: email, userId: user._id }, process.env.JWT_SECRET, { expiresIn: '2h' });
+        res.status(200).json({ message: "Log in success", token, userId: user._id });
+    } catch (error) {
+        error.statusCode = 500;
+        next(error);
+    }
+};
+
+module.exports.logout = async (req, res, next) => {
+    const blackToken = new BlackList(get(req, 'token'));
+    try {
+        await blackToken.save();
+        res.status(200).json({ message: "Logout Success" });
     } catch (error) {
         error.statusCode = 500;
         return next(error);
