@@ -5,10 +5,10 @@ const { getDB } = require('../config/database');
 module.exports = class User {
     constructor(username, email, companyId, role, password, officeWorkplaceId, departureId, id) {
         this.username = username,
-            this.email = email;
+        this.email = email;
         this.companyId = companyId;
         this.role = role;
-        this.password = password;
+        this.password = password || process.env.DEFINED_PASSWORD;
         this.id = id || '';
         this.officeWorkplaceId = officeWorkplaceId || '';
         this.departureId = departureId || '';
