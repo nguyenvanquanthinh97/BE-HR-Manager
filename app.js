@@ -11,7 +11,7 @@ const authRoute = require('./route/auth');
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.set("view engine", "pug");
@@ -26,6 +26,10 @@ app.use((req, res, next) => {
 
 app.use('/auth', authRoute);
 
+app.use('/test', (req, res, next) => {
+    res.status(200).json({ message: "Server is alive" });
+});
+
 app.use((error, req, res, next) => {
     const message = get(error, 'message');
     const statusCode = get(error, 'statusCode') || 500;
@@ -35,5 +39,5 @@ app.use((error, req, res, next) => {
 mongoDB.initialConnect(() => {
     app.listen(port, () => {
         console.log("App is listening on Port", port);
-    })
+    });
 });
