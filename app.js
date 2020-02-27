@@ -7,6 +7,9 @@ const { get } = require('lodash');
 const mongoDB = require('./config/database.js');
 
 const authRoute = require('./route/auth');
+const companyRoute = require('./route/company');
+const officeRoute = require('./route/office');
+const departureRoute = require('./route/departure');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -25,6 +28,9 @@ app.use((req, res, next) => {
 });
 
 app.use('/auth', authRoute);
+app.use('/company', companyRoute);
+app.use('/office', officeRoute);
+app.use('/departure', departureRoute);
 
 app.use('/test', (req, res, next) => {
     res.status(200).json({ message: "Server is alive" });

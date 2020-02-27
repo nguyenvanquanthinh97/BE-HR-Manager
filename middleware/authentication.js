@@ -29,6 +29,7 @@ module.exports = async (req, res, next) => {
     }
 
     req.token = token;
+    req.companyId = get(decodedToken, 'companyId');
     req.userId = get(decodedToken, 'userId');
     next();
 };
