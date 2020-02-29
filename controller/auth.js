@@ -8,7 +8,11 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../model/user');
 const Company = require('../model/company');
+const Departure = require('../model/departure');
 const BlackList = require('../model/black-lists');
+const Office = require('../model/office-workplace');
+
+const { ROLE } = require('../constant');
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -78,7 +82,7 @@ module.exports.verifyEmail = async (req, res, next) => {
             return next(error);
         }
         await Company.updateByUserId(userId, { verify: true });
-        res.status(202).json({ message: "Verify Success" });
+        res.redirect(301, process.env.FRONTEND_DOMAIN || 'http://localhost:5000/login');
     } catch (error) {
         error.statusCode = 500;
         return next(error);
@@ -114,7 +118,8 @@ module.exports.login = async (req, res, next) => {
             error.statusCode = 401;
             return next(error);
         }
-        const token = 'Bearer ' + jwt.sign({ email: email, userId: user._id, companyId: get(user, 'companyId') }, process.env.JWT_SECRET, { expiresIn: '2h' });
+        const company = Company.findById(get(user, 'companyId'));
+        const token = 'Bearer ' + jwt.sign({ email: email, userId: user._id, companyId: get(user, 'companyId'), companyName: get(company, 'name'), role: get(user, 'role'), username: get(user, 'username') }, process.env.JWT_SECRET, { expiresIn: '2h' });
         res.status(200).json({ message: "Log in success", token, userId: user._id });
     } catch (error) {
         error.statusCode = 500;
@@ -130,5 +135,93 @@ module.exports.logout = async (req, res, next) => {
     } catch (error) {
         error.statusCode = 500;
         return next(error);
+    }
+};
+
+module.exports.addStaff = async (req, res, next) => {
+    const email = get(req.body, 'email');
+    const username = get(req.body, 'username');
+    const role = get(req.body, 'role');
+    const officeId = get(req.body, 'officeId');
+    const departureId = get(req.body, 'departureId');
+    const companyId = req.companyId;
+    const companyName = req.companyName;
+    const trustedUsername = req.username;
+    const trustedUserRole = req.role;
+
+    const validRoles = [ROLE.administrator, ROLE.hr];
+
+    const roleIdx = validRoles.findIndex(vRole => vRole === trustedUserRole);
+
+    if (roleIdx === -1) {
+        const error = new Error("Unauthorization User");
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    const schema = Joi.object().keys({
+        email: Joi.string().trim().email().required(),
+        username: Joi.string().trim().min(2).required(),
+        role: Joi.string().trim().valid(ROLE.staff, ROLE.hr, ROLE.leader),
+        officeId: Joi.string().trim().required(),
+        departureId: Joi.string().trim().required()
+    });
+
+    const { error, value } = schema.validate({ email, username, role, officeId, departureId });
+
+    if (error) {
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    try {
+        const office = new Office(companyId, null, null, null, null, null, null, null, officeId);
+        let departures = await office.getAllDepartures();
+        departures = get(departures[0], 'departures');
+
+        if (!departures) {
+            const err = new Error('Invalid OfficeId');
+            err.statusCode = 404;
+            throw err;
+        }
+
+        let departure = departures.find(depart => depart._id.toString() === departureId.toString());
+        if (!departure) {
+            const err = new Error('Invalid DepartureId');
+            err.statusCode = 404;
+            throw err;
+        }
+
+        const user = new User(get(value, 'username'), get(value, 'email'), get(value, 'companyId'), get(value, 'role'), null, get(value, 'officeId'), get(value, 'departureId'));
+
+        const userInserted = await user.save();
+
+        departure = new Departure(get(value, 'officeId'), null, null, null, null, get(value, 'departureId'));
+
+        await departure.addMember(get(userInserted, 'insertedId'), get(value, 'username'));
+
+        res.status(201).json({ message: "Create user sucess", user });
+
+        let template = new EmailTemplate({
+            views: {
+                root: 'views'
+            }
+        });
+
+        const result = await template.render('staff-request-change-password.pug', {
+            username,
+            usernameAdded: trustedUsername,
+            companyName,
+            defaultPassword: process.env.DEFINED_PASSWORD,
+            resetUrl: (process.env.FRONTEND_DOMAIN || 'http://localhost:5000/') + 'auth/reset-password/'
+        });
+        sgMail.send({
+            to: get(value, 'email'),
+            from: 'no-reply@HR-Manager.com',
+            subject: 'Validation Email',
+            html: result
+        });
+    } catch (error) {
+        throw error;
     }
 };

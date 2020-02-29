@@ -9,9 +9,9 @@ module.exports = class User {
         this.companyId = companyId;
         this.role = role;
         this.password = password || process.env.DEFINED_PASSWORD;
-        this.id = id || '';
-        this.officeWorkplaceId = officeWorkplaceId || '';
-        this.departureId = departureId || '';
+        this._id = id ? new ObjectId(id) : null;
+        this.officeWorkplaceId = officeWorkplaceId ? new ObjectId(officeWorkplaceId) : null;
+        this.departureId = departureId ? new ObjectId(departureId) : null;
     }
 
     save() {

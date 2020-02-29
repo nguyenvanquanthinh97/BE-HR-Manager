@@ -18,11 +18,11 @@ module.exports = class Departure {
             .insertOne(this);
     }
 
-    static addMember(memberId) {
+    addMember(memberId, username) {
         const db = getDB();
 
         return db.collection('departures')
-            .updateOne({ _id: this._id }, { $push: { memberIds: memberId } });
+            .updateOne({ _id: this._id }, { $push: { memberIds: memberId, username } });
     }
 
     static setLeaderId(leaderId) {

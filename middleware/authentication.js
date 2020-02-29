@@ -31,5 +31,8 @@ module.exports = async (req, res, next) => {
     req.token = token;
     req.companyId = get(decodedToken, 'companyId');
     req.userId = get(decodedToken, 'userId');
+    req.role = get(decodedToken, 'role');
+    req.username = get(decodedToken, 'username');
+    req.companyName = get(decodedToken, 'companyName');
     next();
 };
