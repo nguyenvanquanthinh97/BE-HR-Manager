@@ -55,7 +55,7 @@ module.exports.signup = async (req, res, next) => {
         });
         const result = await template.render('verify-email.pug', {
             username,
-            verifyUrl: (process.env.DOMAIN || 'http://localhost:5000/') + 'auth/verify-email/' + get(userInserted, 'insertedId')
+            verifyUrl: (process.env.BACK_ENDDOMAIN || 'http://localhost:5000/') + 'auth/verify-email/' + get(userInserted, 'insertedId')
         });
         sgMail.send({
             to: get(value, 'email'),
