@@ -55,7 +55,11 @@ module.exports = class OfficeWorkplace {
                 localField: '_id',
                 foreignField: 'officeWorkplaceId',
                 as: 'members'
+<<<<<<< HEAD
             }}, {$project: {_id: 1, name: 1, shifts: 1 , "members._id": 1, "members.username": 1, "members.email": 1}}]).toArray();
+=======
+            }}, {$project: {_id: 1, name: 1 , "members._id": 1, "members.username": 1, "members.email": 1}}]).toArray();
+>>>>>>> 1fa8d7e21b5c61bdc08b210851e45630fb4dbe2a
     }
 
     static findById(departureId) {
