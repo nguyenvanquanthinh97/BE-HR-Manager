@@ -25,7 +25,7 @@ module.exports = class OfficeWorkplace {
         const db = getDB();
 
         return db.collection('office_workplaces')
-            .updateOne({ _id: this._id }, { $push: {departureIds: departureId} });
+            .updateOne({ _id: this._id }, { $push: { departureIds: departureId } });
     }
 
     addShift(shift) {
@@ -38,42 +38,42 @@ module.exports = class OfficeWorkplace {
     getAllDepartures() {
         const db = getDB();
         return db.collection('office_workplaces')
-            .aggregate([{$lookup: {
-                from: 'departures',
-                localField: '_id',
-                foreignField: 'officeId',
-                as: 'departures'
-            }}]).toArray();
+            .aggregate([{
+                $lookup: {
+                    from: 'departures',
+                    localField: '_id',
+                    foreignField: 'officeId',
+                    as: 'departures'
+                }
+            }]).toArray();
     }
 
     getMembers() {
         const db = getDB();
 
         return db.collection('office_workplaces')
-            .aggregate([{$lookup: {
-                from: 'users',
-                localField: '_id',
-                foreignField: 'officeWorkplaceId',
-                as: 'members'
-<<<<<<< HEAD
-            }}, {$project: {_id: 1, name: 1, shifts: 1 , "members._id": 1, "members.username": 1, "members.email": 1}}]).toArray();
-=======
-            }}, {$project: {_id: 1, name: 1 , "members._id": 1, "members.username": 1, "members.email": 1}}]).toArray();
->>>>>>> 1fa8d7e21b5c61bdc08b210851e45630fb4dbe2a
+            .aggregate([{
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: 'officeWorkplaceId',
+                    as: 'members'
+                }
+            }, { $project: { _id: 1, name: 1, shifts: 1, "members._id": 1, "members.username": 1, "members.email": 1 } }]).toArray();
     }
 
     static findById(departureId) {
         const db = getDB();
 
         return db.collection('office_workplaces')
-            .findOne({_id: new ObjectId(departureId)})
+            .findOne({ _id: new ObjectId(departureId) });
     }
 
     static findByCompanyId(companyId) {
-        const db = getDB()
+        const db = getDB();
 
         return db.collection('office_workplaces')
-            .find({companyId: new ObjectId(companyId)})
+            .find({ companyId: new ObjectId(companyId) })
             .toArray();
     }
 };
