@@ -46,6 +46,18 @@ module.exports = class OfficeWorkplace {
             }}]).toArray();
     }
 
+    getMembers() {
+        const db = getDB();
+
+        return db.collection('office_workplaces')
+            .aggregate([{$lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: 'officeWorkplaceId',
+                as: 'members'
+            }}, {$project: {_id: 1, name: 1 , "members._id": 1, "members.username": 1, "members.email": 1}}]).toArray();
+    }
+
     static findById(departureId) {
         const db = getDB();
 

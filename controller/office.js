@@ -87,13 +87,13 @@ module.exports.addShift = async (req, res, next) => {
     const timeStartedValid = moment(timeStarted, 'HH:mm', true).isValid();
     const timeEndedValid = moment(timeEnded, 'HH:mm', true).isValid();
 
-    if(!timeStartedValid) {
+    if (!timeStartedValid) {
         const error = new Error('Invalid time started format');
         error.statusCode = 422;
         return next(error);
     }
 
-    if(!timeEndedValid) {
+    if (!timeEndedValid) {
         const error = new Error('Invalid time ended format');
         error.statusCode = 422;
         return next(error);
@@ -116,11 +116,40 @@ module.exports.addShift = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
-        office = new Office(null,null,null,null,null,null,null,null,officeId);
+        office = new Office(null, null, null, null, null, null, null, null, officeId);
         const shift = { name: get(value, 'name'), timeStarted: get(value, 'timeStarted'), timeEnded: get(value, 'timeEnded') };
         const result = await office.addShift(shift);
-        res.status(201).json({message: "Shift created Success", shift})
+        res.status(201).json({ message: "Shift created Success", shift });
     } catch (error) {
         throw error;
+    }
+};
+
+module.exports.getUserDepartureOffice = async (req, res, next) => {
+    const officeId = get(req.params, 'officeId');
+    const office = new Office(null, null, null, null, null, null, null, null, officeId);
+
+    try {
+        let officeMemberInfo = await office.getMembers();
+        officeMemberInfo = officeMemberInfo[0];
+        if(!officeMemberInfo) {
+            const error = new Error('Invalid OfficeId');
+            error.statusCode = 404;
+            throw error;
+        }
+        let departures = await office.getAllDepartures();
+        departures = departures[0];
+        departures = get(departures, 'departures');
+        departures = departures.map(departure => {
+            let departObj = {
+                _id: departure._id,
+                name: departure.name,
+                memberIds: departure.memberIds
+            }
+            return departObj;
+        })
+        res.status(200).json({message: "Get Success", officeMemberInfo, departures})
+    } catch (error) {
+        next(error);
     }
 };
