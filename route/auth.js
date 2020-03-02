@@ -14,4 +14,6 @@ router.get('/logout', authentication, userController.logout);
 
 router.post('/staff/signup', authentication, userController.addStaff);
 
+router.post('/reset-password', userController.resetPassword);
+
 module.exports = router;

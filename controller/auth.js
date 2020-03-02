@@ -55,7 +55,7 @@ module.exports.signup = async (req, res, next) => {
         });
         const result = await template.render('verify-email.pug', {
             username,
-            verifyUrl: (process.env.BACK_ENDDOMAIN || 'http://localhost:5000/') + 'auth/verify-email/' + get(userInserted, 'insertedId')
+            verifyUrl: (process.env.BACKEND_DOMAIN || 'http://localhost:5000/') + 'auth/verify-email/' + get(userInserted, 'insertedId')
         });
         sgMail.send({
             to: get(value, 'email'),
@@ -223,5 +223,47 @@ module.exports.addStaff = async (req, res, next) => {
         });
     } catch (error) {
         throw error;
+    }
+};
+
+module.exports.resetPassword = async (req, res, next) => {
+    const email = get(req.body, 'email');
+    const oldPassword = get(req.body, 'oldPassword');
+    const newPassword = get(req.body, 'newPassword');
+
+    const schema = Joi.object().keys({
+        email: Joi.string().trim().email().required(),
+        oldPassword: Joi.string().required(),
+        newPassword: Joi.string().trim().min(6).required()
+    });
+
+    const { error, value } = schema.validate({ email, oldPassword, newPassword });
+
+    if (error) {
+        const error = new Error("Validation Error !");
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    try {
+        let user = await User.findByEmail(get(value, 'email'));
+        if (!user) {
+            const error = new Error("Email not found");
+            error.statusCode = 404;
+            throw error;
+        }
+        const password = get(user, 'password');
+        const result = await bcrypt.compare(oldPassword, password);
+        if (!result) {
+            const error = new Error("Wrong Password");
+            error.statusCode = 406;
+            throw error;
+        }
+        user = new User(null, null, null, null, null, null, null, user._id);
+        const hashedPassword = await bcrypt.genSalt(12).then(salt => bcrypt.hash(get(value, 'newPassword'), salt));
+        await user.resetPassword(hashedPassword);
+        res.status(201).json({ message: 'Account Reset Password Success' });
+    } catch (error) {
+        return next(error);
     }
 };

@@ -5,7 +5,7 @@ const { getDB } = require('../config/database');
 module.exports = class User {
     constructor(username, email, companyId, role, password, officeWorkplaceId, departureId, id) {
         this.username = username,
-        this.email = email;
+            this.email = email;
         this.companyId = companyId;
         this.role = role;
         this.password = password || process.env.DEFINED_PASSWORD;
@@ -19,6 +19,13 @@ module.exports = class User {
 
         return db.collection('users')
             .insertOne(this);
+    }
+
+    resetPassword(newPassword) {
+        const db = getDB();
+
+        return db.collection('users')
+            .updateOne({ _id: new ObjectId(this._id) }, { $set: { password: newPassword } });
     }
 
     static findById(userId) {
