@@ -1,5 +1,4 @@
 const { ObjectId } = require('mongodb');
-const uniqid = require('uniqid');
 
 const { getDB } = require('../config/database');
 module.exports = class OfficeWorkplace {
@@ -33,7 +32,7 @@ module.exports = class OfficeWorkplace {
         const db = getDB();
 
         return db.collection('office_workplaces')
-            .updateOne({ _id: this._id }, { $push: { shifts: { shiftId: new ObjectId(uniqid()), ...shift } } });
+            .updateOne({ _id: this._id }, { $push: { shifts: { shiftId: new ObjectId(), ...shift } } });
     }
 
     getAllDepartures() {

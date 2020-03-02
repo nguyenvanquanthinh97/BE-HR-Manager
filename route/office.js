@@ -6,5 +6,6 @@ const officeController = require('../controller/office');
 
 router.get('/', authentication, officeController.getOffices);
 router.post('/create', authentication, officeController.createOffice);
+router.post('/create/:officeId', authentication, officeController.addShift);
 
 module.exports = router;

@@ -1,7 +1,9 @@
 const { get, set } = require('lodash');
 const Joi = require('@hapi/joi');
 const { ObjectId } = require('mongodb');
+const moment = require('moment-timezone');
 
+const { ROLE } = require('../constant');
 const Office = require('../model/office-workplace');
 const Company = require('../model/company');
 
@@ -55,5 +57,70 @@ module.exports.getOffices = async (req, res, next) => {
     } catch (error) {
         error.statusCode = 500;
         return next(error);
+    }
+};
+
+module.exports.addShift = async (req, res, next) => {
+    const officeId = get(req.params, 'officeId');
+    const name = get(req.body, 'name');
+    const timeStarted = get(req.body, 'timeStarted');
+    const timeEnded = get(req.body, 'timeEnded');
+    const role = req.role;
+    const validRole = [ROLE.administrator, ROLE.hr];
+
+    const roleIdx = validRole.findIndex(vRole => vRole === role);
+
+    if (roleIdx === -1) {
+        const error = new Error('Unvalid Role');
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    const schema = Joi.object().keys({
+        name: Joi.string().trim().required(),
+        timeStarted: Joi.string().trim().required(),
+        timeEnded: Joi.string().trim().required(),
+    });
+
+    const { error, value } = schema.validate({ name, timeStarted, timeEnded });
+
+    const timeStartedValid = moment(timeStarted, 'HH:mm', true).isValid();
+    const timeEndedValid = moment(timeEnded, 'HH:mm', true).isValid();
+
+    if(!timeStartedValid) {
+        const error = new Error('Invalid time started format');
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    if(!timeEndedValid) {
+        const error = new Error('Invalid time ended format');
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    if (error) {
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    try {
+        let office = await Office.findById(officeId);
+        if (!office) {
+            const error = new Error("Invalid OfficeId");
+            error.statusCode = 404;
+            throw error;
+        }
+        if (office.companyId.toString() !== req.companyId) {
+            const error = new Error("Invalid CompanyId");
+            error.statusCode = 404;
+            throw error;
+        }
+        office = new Office(null,null,null,null,null,null,null,null,officeId);
+        const shift = { name: get(value, 'name'), timeStarted: get(value, 'timeStarted'), timeEnded: get(value, 'timeEnded') };
+        const result = await office.addShift(shift);
+        res.status(201).json({message: "Shift created Success", shift})
+    } catch (error) {
+        throw error;
     }
 };
