@@ -7,6 +7,7 @@ const { get } = require('lodash');
 const mongoDB = require('./config/database.js');
 
 const authRoute = require('./route/auth');
+const userRoute = require('./route/user');
 const companyRoute = require('./route/company');
 const officeRoute = require('./route/office');
 const departureRoute = require('./route/departure');
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/auth', authRoute);
+app.use('/user', userRoute);
 app.use('/company', companyRoute);
 app.use('/office', officeRoute);
 app.use('/departure', departureRoute);

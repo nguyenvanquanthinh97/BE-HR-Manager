@@ -28,6 +28,15 @@ module.exports = class User {
             .updateOne({ _id: new ObjectId(this._id) }, { $set: { password: newPassword } });
     }
 
+    static assignShiftByIds(userIds, shifts) {
+        const db = getDB();
+
+        let ids = userIds.map(userId => new ObjectId(userId));
+
+        return db.collection('users')
+            .updateMany({_id: {$in: ids}}, {$set: shifts})
+    }
+
     static findById(userId) {
         const db = getDB();
 

@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongodb');
 
+const User = require('./user');
 const { getDB } = require('../config/database');
 module.exports = class OfficeWorkplace {
     constructor(companyId, name, address, city, timeStarted, timeEnded, departures, shifts, id, location) {
@@ -62,11 +63,18 @@ module.exports = class OfficeWorkplace {
             }, { $project: { _id: 1, name: 1, shifts: 1, "members._id": 1, "members.username": 1, "members.email": 1 } }]).toArray();
     }
 
-    static findById(departureId) {
+    updateOffice(args) {
         const db = getDB();
 
         return db.collection('office_workplaces')
-            .findOne({ _id: new ObjectId(departureId) });
+            .updateOne({ _id: this._id }, { $set: args });
+    }
+
+    static findById(officeId) {
+        const db = getDB();
+
+        return db.collection('office_workplaces')
+            .findOne({ _id: new ObjectId(officeId) });
     }
 
     static findByCompanyId(companyId) {
@@ -75,5 +83,23 @@ module.exports = class OfficeWorkplace {
         return db.collection('office_workplaces')
             .find({ companyId: new ObjectId(companyId) })
             .toArray();
+    }
+
+    static deleteById(officeId) {
+        const db = getDB();
+
+        return db.collection('users')
+            .findOne({ officeWorkplaceId: new ObjectId(officeId) })
+            .then(user => {
+                if(user) {
+                    const error = new Error("Can not delete this office, there is still a user in");
+                    error.statusCode = 422;
+                    throw error;
+                }
+            })
+            .then(() => {
+                db.collection('office_workplaces')
+                .deleteOne({ _id: new ObjectId(officeId) });
+            })
     }
 };

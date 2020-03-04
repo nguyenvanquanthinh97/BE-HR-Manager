@@ -15,7 +15,6 @@ module.exports.createOffice = async (req, res, next) => {
     const timeEnded = get(req.body, 'timeEnded');
     const location = get(req.body, 'location');
     const companyId = req.companyId;
-    console.log(companyId);
 
     const schema = Joi.object().keys({
         name: Joi.string().trim().min(2).required(),
@@ -132,7 +131,7 @@ module.exports.getUserDepartureOffice = async (req, res, next) => {
     try {
         let officeMemberInfo = await office.getMembers();
         officeMemberInfo = officeMemberInfo[0];
-        if(!officeMemberInfo) {
+        if (!officeMemberInfo) {
             const error = new Error('Invalid OfficeId');
             error.statusCode = 404;
             throw error;
@@ -145,10 +144,105 @@ module.exports.getUserDepartureOffice = async (req, res, next) => {
                 _id: departure._id,
                 name: departure.name,
                 memberIds: departure.memberIds
-            }
+            };
             return departObj;
-        })
-        res.status(200).json({message: "Get Success", officeMemberInfo, departures})
+        });
+        res.status(200).json({ message: "Get Success", officeMemberInfo, departures });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.editOffice = async (req, res, next) => {
+    const officeId = get(req.params, 'officeId');
+    const name = get(req.body, 'name');
+    const address = get(req.body, 'address');
+    const city = get(req.body, 'city');
+    const timeStarted = get(req.body, 'timeStarted');
+    const timeEnded = get(req.body, 'timeEnded');
+    let location = get(req.body, 'location');
+    const companyId = req.companyId;
+    const role = req.role;
+    const validRoles = [ROLE.administrator];
+
+    const roleIdx = validRoles.findIndex(vRole => vRole === role);
+    if (roleIdx === -1) {
+        const error = new Error("Unauthorization");
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    const schema = Joi.object().keys({
+        name: Joi.string().trim().min(2).required(),
+        address: Joi.string().trim().optional().allow(null, ''),
+        city: Joi.string().trim().optional().allow(null, ''),
+        timeStarted: Joi.string().trim(),
+        timeEnded: Joi.string().trim(),
+        location: Joi.optional().allow(null, '')
+    });
+
+    const { error, value } = schema.validate({ name, address, city, timeStarted, timeEnded, location });
+
+    if (get(value, 'location.type', '') !== 'Point') {
+        location = {
+            type: 'Point',
+            coordinates: location
+        };
+    }
+
+    if (error) {
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    try {
+        let office = await Office.findById(officeId);
+        if (!office) {
+            const error = new Error('OfficeId is not existed');
+            error.statusCode = 404;
+            throw error;
+        }
+        office = new Office(null, null, null, null, null, null, null, null, office._id);
+        const result = await office.updateOffice({ name: get(value, 'name'), address: get(value, 'address'), city: get(value, 'city'), timeStarted: get(value, 'timeStarted'), timeEnded: get(value, 'timeEnded'), location });
+
+        res.status(201).json({ message: "Edit Office Success" });
+    } catch (error) {
+        error.statusCode = 500;
+        return next(error);
+    }
+};
+
+module.exports.deleteOffice = async (req, res, next) => {
+    const officeId = get(req.params, 'officeId');
+    const role = req.role;
+    const validRoles = [ROLE.administrator];
+
+    const roleIdx = validRoles.findIndex(vRole => vRole === role);
+    if (roleIdx === -1) {
+        const error = new Error('Unauthorization');
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    try {
+        const result = await Office.deleteById(officeId);
+        res.status(200).json({ message: "Remove this office success" });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.getOfficeDetail = async (req, res, next) => {
+    const officeId = get(req.params, 'officeId');
+
+    try {
+        const office = await Office.findById(officeId);
+        if (!office) {
+            const error = new Error('OfficeId is not valid');
+            error.statusCode = 404;
+            throw error;
+        }
+        res.status(200).json({ message: 'get office Info success', office });
     } catch (error) {
         next(error);
     }
