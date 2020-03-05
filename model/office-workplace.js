@@ -39,7 +39,11 @@ module.exports = class OfficeWorkplace {
     getAllDepartures() {
         const db = getDB();
         return db.collection('office_workplaces')
-            .aggregate([{
+            .aggregate([
+            {
+                $match: {_id: new ObjectId(this._id)}
+            },
+            {
                 $lookup: {
                     from: 'departures',
                     localField: '_id',
@@ -53,7 +57,11 @@ module.exports = class OfficeWorkplace {
         const db = getDB();
 
         return db.collection('office_workplaces')
-            .aggregate([{
+            .aggregate([
+                {
+                    $match: {_id: new ObjectId(this._id)}
+                },
+                {
                 $lookup: {
                     from: 'users',
                     localField: '_id',

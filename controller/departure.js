@@ -44,13 +44,9 @@ module.exports.getDepartures = async (req, res, next) => {
             err.statusCode = 404;
             throw err;
         }
-        if (companyId.toString() !== get(departures, 'companyId').toString()) {
-            const err = new Error('Invalid OfficeId');
-            error.statusCode = 404;
-            throw err;
-        }
         res.status(200).json({ message: "Get successes", departures: get(departures, 'departures') });
     } catch (error) {
+        console.log(error);
         if (!error.statusCode) {
             error.statusCode = 500;
         }
