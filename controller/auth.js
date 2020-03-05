@@ -21,7 +21,7 @@ module.exports.signup = async (req, res, next) => {
     const username = get(req.body, 'username');
     const email = get(req.body, 'email');
     const password = get(req.body, 'password');
-    const role = 'administrator';
+    const role = ROLE.administrator;
 
     const schema = Joi.object().keys({
         companyName: Joi.string().trim().min(2).required(),
