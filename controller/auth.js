@@ -141,7 +141,7 @@ module.exports.logout = async (req, res, next) => {
 module.exports.addStaff = async (req, res, next) => {
     const email = get(req.body, 'email');
     const username = get(req.body, 'username');
-    const role = get(req.body, 'role');
+    let role = get(req.body, 'role', '');
     const officeId = get(req.body, 'officeId');
     const departureId = get(req.body, 'departureId');
     const companyId = req.companyId;
@@ -150,6 +150,8 @@ module.exports.addStaff = async (req, res, next) => {
     const trustedUserRole = req.role;
 
     const validRoles = [ROLE.administrator, ROLE.hr];
+
+    role = role.toUpperCase();
 
     const roleIdx = validRoles.findIndex(vRole => vRole === trustedUserRole);
 
