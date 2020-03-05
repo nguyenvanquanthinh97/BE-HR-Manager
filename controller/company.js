@@ -27,7 +27,7 @@ module.exports.getStaffs = async (req, res, next) => {
     const page = get(req.query, 'page', 1);
 
     try {
-        let users = await User.findByCompanyId(companyId);
+        let users = await User.findByCompanyId(companyId, page);
         users = users[0];
         if(!users) {
             const error = new Error('Invalid companyId');
