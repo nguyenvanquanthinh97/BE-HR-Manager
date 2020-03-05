@@ -24,7 +24,7 @@ module.exports.getCompany = async (req, res, next) => {
 
 module.exports.getStaffs = async (req, res, next) => {
     const companyId = req.companyId;
-    const page = get(req.query, 'page', 1);
+    const page = Number.parseInt(get(req.query, 'page', 1));
 
     try {
         let users = await User.findByCompanyId(companyId, page);
