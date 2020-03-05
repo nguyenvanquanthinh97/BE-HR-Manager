@@ -1,6 +1,7 @@
 const { get, set } = require('lodash');
 
 const Company = require('../model/company');
+const User = require('../model/user');
 
 module.exports.getCompany = async (req, res, next) => {
     const companyId = req.companyId;
@@ -20,3 +21,21 @@ module.exports.getCompany = async (req, res, next) => {
         next(error);
     }
 };
+
+module.exports.getStaffs = async (req, res, next) => {
+    const companyId = req.companyId;
+    const page = get(req.query, 'page', 1);
+
+    try {
+        let users = await User.findByCompanyId(companyId);
+        users = users[0];
+        if(!users) {
+            const error = new Error('Invalid companyId');
+            error.statusCode = 404;
+            throw error;
+        }
+        res.status(200).json({message: "success", users})
+    } catch(error) {
+        next(error);
+    }
+}

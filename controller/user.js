@@ -1,4 +1,4 @@
-const { get } = require('lodash');
+const { get, omit } = require('lodash');
 const Joi = require('@hapi/joi');
 
 const { ROLE } = require('../constant');
@@ -72,3 +72,26 @@ module.exports.assignShift = async (req, res, next) => {
         next(error);
     }
 };
+
+module.exports.getInfo = async (req, res, next) => {
+    const userId = get(req.params, 'userId');
+    const companyId = req.companyId;
+
+    try {
+        const user = await User.findById(userId);
+        if(!user) {
+            const error = new Error('UserID is not valid');
+            error.statusCode = 404;
+            throw error;
+        }
+        if(get(user, 'companyId').toString() !== companyId.toString()) {
+            const error = new Error('Invalid companyId');
+            error.statusCode = 401;
+            throw error;
+        }
+
+        res.status(200).json({message: "get user info success", user: omit(user, 'password')});
+    } catch(error) {
+        next(error);
+    }
+}

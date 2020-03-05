@@ -181,6 +181,8 @@ module.exports.addStaff = async (req, res, next) => {
         let departures = await office.getAllDepartures();
         departures = get(departures[0], 'departures');
 
+        let defaultPassword = await bcrypt.genSalt(12).then(salt => bcrypt.hash(process.env.DEFINED_PASSWORD, salt));
+
         if (!departures) {
             const err = new Error('Invalid OfficeId');
             err.statusCode = 404;
@@ -194,7 +196,7 @@ module.exports.addStaff = async (req, res, next) => {
             throw err;
         }
 
-        const user = new User(get(value, 'username'), get(value, 'email'), get(value, 'companyId'), get(value, 'role'), null, get(value, 'officeId'), get(value, 'departureId'));
+        const user = new User(get(value, 'username'), get(value, 'email'), get(value, 'companyId'), get(value, 'role'), defaultPassword, get(value, 'officeId'), get(value, 'departureId'));
 
         const userInserted = await user.save();
 

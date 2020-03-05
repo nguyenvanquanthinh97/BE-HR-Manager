@@ -8,7 +8,7 @@ module.exports = class User {
             this.email = email;
         this.companyId = companyId;
         this.role = role;
-        this.password = password || process.env.DEFINED_PASSWORD;
+        this.password = password;
         this._id = id ? new ObjectId(id) : null;
         this.officeWorkplaceId = officeWorkplaceId ? new ObjectId(officeWorkplaceId) : null;
         this.departureId = departureId ? new ObjectId(departureId) : null;
@@ -49,5 +49,42 @@ module.exports = class User {
 
         return db.collection('users')
             .findOne({ email: email });
+    }
+
+    static findByCompanyId(companyId, page) {
+        const db = getDB();
+        const size = 10;
+
+        return db.collection('users')
+            .aggregate([
+                {
+                    $match: { companyId: new ObjectId(companyId) }
+                },
+                {
+                    $skip: (page - 1) * size
+                },
+                {
+                    $limit: size
+                },
+                {
+                    $lookup: {
+                        from: 'office_workplaces',
+                        localField: 'officeWorkplaceId',
+                        foreignField: '_id',
+                        as: 'office'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'departures',
+                        localField: 'departureId',
+                        foreignField: '_id',
+                        as: 'departure'
+                    }
+                },
+                {
+                    $project: {_id: 1, username: 1, email: 1, role: 1, "office._id": 1, "office.name": 1, "departure._id": 1, "departure.name": 1}
+                }
+            ]).toArray();
     }
 };
