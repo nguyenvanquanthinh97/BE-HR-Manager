@@ -196,7 +196,7 @@ module.exports.addStaff = async (req, res, next) => {
             throw err;
         }
 
-        const user = new User(get(value, 'username'), get(value, 'email'), get(value, 'companyId'), get(value, 'role'), defaultPassword, get(value, 'officeId'), get(value, 'departureId'));
+        const user = new User(get(value, 'username'), get(value, 'email'), companyId, get(value, 'role'), defaultPassword, get(value, 'officeId'), get(value, 'departureId'));
 
         const userInserted = await user.save();
 

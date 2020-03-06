@@ -28,7 +28,6 @@ module.exports.getStaffs = async (req, res, next) => {
 
     try {
         let users = await User.findByCompanyId(companyId, page);
-        users = users[0];
         if(!users) {
             const error = new Error('Invalid companyId');
             error.statusCode = 404;
