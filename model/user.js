@@ -6,7 +6,7 @@ module.exports = class User {
     constructor(username, email, companyId, role, password, officeWorkplaceId, departureId, id) {
         this.username = username,
             this.email = email;
-        this.companyId = companyId;
+        this.companyId = companyId ? new ObjectId(companyId) : null;
         this.role = role;
         this.password = password;
         this._id = id ? new ObjectId(id) : null;
