@@ -11,6 +11,7 @@ const userRoute = require('./route/user');
 const companyRoute = require('./route/company');
 const officeRoute = require('./route/office');
 const departureRoute = require('./route/departure');
+const projectRoute = require('./route/project');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -33,6 +34,7 @@ app.use('/user', userRoute);
 app.use('/company', companyRoute);
 app.use('/office', officeRoute);
 app.use('/departure', departureRoute);
+app.use('/project', projectRoute);
 
 app.use('/test', (req, res, next) => {
     res.status(200).json({ message: "Server is alive" });
