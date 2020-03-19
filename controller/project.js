@@ -1,6 +1,7 @@
-const { get, set } = require('lodash');
+const { get, set, omit } = require('lodash');
 const Joi = require('@hapi/joi');
 const { ObjectId } = require('mongodb');
+const moment = require('moment-timezone');
 
 const Project = require('../model/project');
 const User = require('../model/user');
@@ -47,6 +48,7 @@ module.exports.createProject = async (req, res, next) => {
   const prefixedCode = get(req.body, 'prefixedCode');
   const description = get(req.body, 'description');
   const projectManagerId = get(req.body, 'projectManagerId');
+  const projectManagerUsername = get(req.body, 'projectManagerUsername');
 
   const schema = Joi.object().keys({
     name: Joi.string().trim().required(),
@@ -55,7 +57,7 @@ module.exports.createProject = async (req, res, next) => {
     projectManagerId: Joi.string().trim()
   });
 
-  const { error, value } = schema.validate({ name, prefixedCode, description, projectManagerId });
+  const { error, value } = schema.validate({ name, prefixedCode, description, projectManagerId, projectManagerUsername });
 
   if (error) {
     const err = new Error(error);
@@ -112,8 +114,8 @@ module.exports.addStatus = async (req, res, next) => {
     project = new Project(project._id);
     await project.addStatus(status);
     statuses.push(status);
-    set(project, 'statuses', statuses);
-    res.status(201).json({ message: "Add status success", project });
+
+    res.status(201).json({ message: "Add status success", projectId, statuses });
   } catch (error) {
     next(error);
   }
@@ -153,7 +155,7 @@ module.exports.addTask = async (req, res, next) => {
       throw error;
     }
     const statusIdx = statuses.findIndex(vStat => vStat === status);
-    if(statusIdx === -1) {
+    if (statusIdx === -1) {
       const error = new Error('Invalid Status');
       error.statusCode = 422;
       throw error;
@@ -183,3 +185,215 @@ module.exports.addTask = async (req, res, next) => {
   }
 };
 
+module.exports.addMembers = async (req, res, next) => {
+  const userId = req.userId;
+  const projectId = get(req.body, 'projectId');
+  const members = get(req.body, 'members', []);
+
+  if (members.length === 0) {
+    const error = new Error('members is empty');
+    error.statusCode = 422;
+    return next(error);
+  }
+
+  const schema = Joi.object().keys({
+    projectId: Joi.string().required(),
+    members: Joi.array().items(Joi.object().keys({
+      memberId: Joi.string().required(),
+      username: Joi.string().required(),
+      createTaskPermission: Joi.boolean().required()
+    }))
+  });
+
+  const { error, value } = schema.validate({ projectId, members });
+
+  if (error) {
+    const err = new Error('Validation Fail');
+    err.statusCode = 422;
+    return next(err);
+  }
+
+  try {
+    let project = await Project.findById(projectId);
+    if (!project) {
+      const error = new Error('Invalid ProjectId');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (get(project, 'projectManagerId', '').toString() !== userId.toString()) {
+      const error = new Error('Not enough authorization to add members in this project');
+      error.statusCode = 401;
+      throw error;
+    }
+    project = new Project(project._id);
+    await project.addMembers(members);
+    res.status(201).json({ message: "Add Members success", projectId, members });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.assignTask = async (req, res, next) => {
+  const userId = req.userId;
+  const taskId = get(req.body, 'taskId');
+  const projectId = get(req.body, 'projectId');
+  const memberIds = get(req.body, 'memberIds');
+  const deadline = get(req.body, 'deadline', '');
+
+  const schema = Joi.object().keys({
+    taskId: Joi.string().required(),
+    projectId: Joi.string().required(),
+    memberIds: Joi.array()
+  });
+
+  const { error, value } = schema.validate({ taskId, projectId, memberIds });
+
+  if (deadline !== '') {
+
+    const deadlineValidFormat = moment(deadline, 'HH:mm', true).isValid();
+
+    if (!deadlineValidFormat) {
+      const err = new Error('Validation Deadline wrong format (HH:mm)');
+      err.statusCode = 422;
+      return next(err);
+    }
+
+  }
+
+  if (error) {
+    const err = new Error('Validation Fail');
+    err.statusCode = 422;
+    return next(err);
+  }
+
+  try {
+    let project = await Project.findById(projectId);
+    const groupIds = get(project, 'members', []).map(member => get(member, 'memberId'));
+    groupIds.push(get(project, 'projectManagerId'));
+
+    const taskFound = get(project, 'taskList', []).find(task => task._id.toString() === taskId.toString());
+
+    if (!taskFound) {
+      const error = new Error("Can't find tasks");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const userIdx = groupIds.findIndex(id => id.toString() === userId.toString());
+    if (userIdx === -1) {
+      const error = new Error("You're not join in this project");
+      error.statusCode = 404;
+      throw error;
+    }
+    project = new Project(project._id);
+    await project.assignTask(memberIds, taskId, deadline);
+    res.status(201).json({ message: "Assign Task Success", projectId, taskId, memberIds });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.editTaskStatus = async (req, res, next) => {
+  const userId = req.userId;
+  const taskId = get(req.body, 'taskId');
+  const projectId = get(req.body, 'projectId');
+  const status = get(req.body, 'status');
+
+  const schema = Joi.object().keys({
+    projectId: Joi.string().required(),
+    taskId: Joi.string().required()
+  });
+
+  const { error, value } = schema.validate({ projectId, taskId });
+
+  if (error) {
+    const err = new Error('Validation Fail');
+    err.statusCode = 422;
+    return next(err);
+  }
+
+  try {
+    let project = await Project.findById(projectId);
+    const statuses = get(project, 'statuses', []);
+    const groupIds = get(project, 'members', []).map(member => get(member, 'memberId'));
+    groupIds.push(get(project, 'projectManagerId'));
+    if (!project) {
+      const error = new Error('Invalid ProjectId');
+      error.statusCode = 404;
+      throw error;
+    }
+    const userIdx = groupIds.findIndex(id => id.toString() === userId.toString());
+    if (userIdx === -1) {
+      const error = new Error("You're not join in this project");
+      error.statusCode = 404;
+      throw error;
+    }
+    const taskFound = get(project, 'taskList', []).find(task => task._id.toString() === taskId.toString());
+    if (!taskFound) {
+      const error = new Error("Can't find tasks");
+      error.statusCode = 404;
+      throw error;
+    }
+    const statusIdx = statuses.findIndex(vStat => vStat === status);
+    if (statusIdx === -1) {
+      const error = new Error('Invalid Status');
+      error.statusCode = 422;
+      throw error;
+    }
+    project = new Project(project._id);
+    await project.editStatusTask(taskId, status);
+    res.status(202).json({ message: "edit Status Success", projectId, taskId, status });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.addCommentTask = async (req, res, next) => {
+  const userId = req.userId;
+  const taskId = get(req.body, 'taskId');
+  const projectId = get(req.body, 'projectId');
+  const comment = get(req.body, 'comment');
+
+  const schema = Joi.object().keys({
+    projectId: Joi.string().required(),
+    taskId: Joi.string().required(),
+    comment: Joi.string().required()
+  });
+
+  const { error, value } = schema.validate({ projectId, taskId, comment });
+
+  if (error) {
+    const err = new Error('Validation Fail');
+    err.statusCode = 422;
+    return next(err);
+  }
+
+  try {
+    let project = await Project.findById(projectId);
+    const groupIds = get(project, 'members', []).map(member => get(member, 'memberId'));
+    groupIds.push(get(project, 'projectManagerId'));
+    if (!project) {
+      const error = new Error('Invalid ProjectId');
+      error.statusCode = 404;
+      throw error;
+    }
+    const userIdx = groupIds.findIndex(id => id.toString() === userId.toString());
+    if (userIdx === -1) {
+      const error = new Error("You're not join in this project");
+      error.statusCode = 404;
+      throw error;
+    }
+    const taskFound = get(project, 'taskList', []).find(task => task._id.toString() === taskId.toString());
+    if (!taskFound) {
+      const error = new Error("Can't find tasks");
+      error.statusCode = 404;
+      throw error;
+    }
+    project = new Project(project._id);
+
+    await project.addCommentTask(taskId, userId, comment);
+    res.status(202).json({ message: "edit Status Success", projectId, taskId, userId, comment });
+  } catch (error) {
+    next(error);
+  }
+};

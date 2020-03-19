@@ -47,7 +47,5 @@ app.use((error, req, res, next) => {
 });
 
 mongoDB.initialConnect(() => {
-    app.listen(port, () => {
-        console.log("App is listening on Port", port);
-    });
+    app.listen(port);
 });

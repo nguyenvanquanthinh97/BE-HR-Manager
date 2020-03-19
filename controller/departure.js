@@ -46,7 +46,6 @@ module.exports.getDepartures = async (req, res, next) => {
         }
         res.status(200).json({ message: "Get successes", departures: get(departures, 'departures') });
     } catch (error) {
-        console.log(error);
         if (!error.statusCode) {
             error.statusCode = 500;
         }

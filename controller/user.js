@@ -59,7 +59,6 @@ module.exports.assignShift = async (req, res, next) => {
         const validShiftIds = office.shifts.map(shift => shift.shiftId);
         for (shift of shiftRegistered) {
             const idx = validShiftIds.findIndex(vShiftId => vShiftId.toString() === shift.shiftedId.toString());
-            console.log(idx);
             if (idx === -1) {
                 const error = new Error('Invalid ShiftId');
                 error.statusCode = 422;
