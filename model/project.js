@@ -36,6 +36,13 @@ module.exports = class Project {
       .updateOne({ _id: new ObjectId(this._id) }, { $push: { taskList: task } });
   }
 
+  editTaskInfo(taskId, task) {
+    const db = getDB();
+
+    return db.collection('projects')
+      .updateOne({ _id: new ObjectId(this._id), "taskList._id": new ObjectId(taskId) }, { $set: { "taskList.$": task } });
+  }
+
   addMembers(members) {
     const db = getDB();
 
