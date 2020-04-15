@@ -8,6 +8,7 @@ const initialConnect = (callback) => {
     MongoClient.connect(url)
         .then(client => {
             _db = client.db('office-manager');
+            console.log('Mongo Initial')
             return callback();
         })
         .catch(err => {

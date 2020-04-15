@@ -8,4 +8,6 @@ router.post('/assign-shift', authentication, userController.assignShift);
 
 router.get('/:userId', authentication, userController.getInfo);
 
+router.post('/checkin', authentication, userController.checkin);
+
 module.exports = router;

@@ -40,17 +40,17 @@ module.exports = class OfficeWorkplace {
         const db = getDB();
         return db.collection('office_workplaces')
             .aggregate([
-            {
-                $match: {_id: new ObjectId(this._id)}
-            },
-            {
-                $lookup: {
-                    from: 'departures',
-                    localField: '_id',
-                    foreignField: 'officeId',
-                    as: 'departures'
-                }
-            }]).toArray();
+                {
+                    $match: { _id: new ObjectId(this._id) }
+                },
+                {
+                    $lookup: {
+                        from: 'departures',
+                        localField: '_id',
+                        foreignField: 'officeId',
+                        as: 'departures'
+                    }
+                }]).toArray();
     }
 
     getMembers() {
@@ -59,16 +59,16 @@ module.exports = class OfficeWorkplace {
         return db.collection('office_workplaces')
             .aggregate([
                 {
-                    $match: {_id: new ObjectId(this._id)}
+                    $match: { _id: new ObjectId(this._id) }
                 },
                 {
-                $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: 'officeWorkplaceId',
-                    as: 'members'
-                }
-            }, { $project: { _id: 1, name: 1, shifts: 1, "members._id": 1, "members.username": 1, "members.email": 1 } }]).toArray();
+                    $lookup: {
+                        from: 'users',
+                        localField: '_id',
+                        foreignField: 'officeWorkplaceId',
+                        as: 'members'
+                    }
+                }, { $project: { _id: 1, name: 1, shifts: 1, "members._id": 1, "members.username": 1, "members.email": 1 } }]).toArray();
     }
 
     updateOffice(args) {
@@ -99,7 +99,7 @@ module.exports = class OfficeWorkplace {
         return db.collection('users')
             .findOne({ officeWorkplaceId: new ObjectId(officeId) })
             .then(user => {
-                if(user) {
+                if (user) {
                     const error = new Error("Can not delete this office, there is still a user in");
                     error.statusCode = 422;
                     throw error;
@@ -107,7 +107,23 @@ module.exports = class OfficeWorkplace {
             })
             .then(() => {
                 db.collection('office_workplaces')
-                .deleteOne({ _id: new ObjectId(officeId) });
-            })
+                    .deleteOne({ _id: new ObjectId(officeId) });
+            });
+    }
+
+    static findByGeo(location) {
+        const db = getDB();
+
+        return db.collection('office_workplaces')
+            .find(
+                {
+                    location: {
+                        $near: {
+                            $geometry: location,
+                            $maxDistance: 50
+                        }
+                    }
+                }
+            ).toArray();
     }
 };
