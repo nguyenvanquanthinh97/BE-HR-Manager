@@ -6,6 +6,7 @@ const { ROLE } = require('../constant');
 const User = require('../model/user');
 const Office = require('../model/office-workplace');
 const TimeCheckin = require('../model/time-checkin');
+const TimeZone = require('../utils/timezone');
 
 module.exports.assignShift = async (req, res, next) => {
     const userIds = get(req.body, 'userIds');
@@ -123,6 +124,12 @@ module.exports.checkin = async (req, res, next) => {
             coordinates: [longitude, latitude]
         };
 
+        // const timezone = `http://api.timezonedb.com/v2.1/get-time-zone?key=${process.env.API_TIMEZONEDB}&format=json&by=position&lat=${latitude}&lng=${longitude}`;
+
+        const timezone = await TimeZone.getTimeZones(latitude, longitude);
+
+        const zoneName = get(timezone, 'zoneName');
+
         const offices = await Office.findByGeo(location);
 
         const officeIdx = offices.findIndex(office => String(get(office, '_id')) === String(officeId));
@@ -138,7 +145,7 @@ module.exports.checkin = async (req, res, next) => {
         const shift = get(office, 'shifts', []).find(oShift => String(oShift.shiftId) === String(shiftId));
 
         const checkin = {
-            dateChecked: moment().format("MM-DD-YYYY hh:mm:ss a"),
+            dateChecked: moment().tz(zoneName).format("MM-DD-YYYY hh:mm:ss a"),
             location
         };
 
@@ -157,8 +164,8 @@ module.exports.checkin = async (req, res, next) => {
             const timeCheckout = new TimeCheckin(get(checkout, '_id', null));
             let diffMins = moment().diff(moment(get(checkout, 'checkin.dateChecked'), "MM-DD-YYYY hh:mm:ss a"), 'minutes');
 
-            const timeShiftStart = moment(get(shift, 'timeStarted'), 'hh:mm');
-            const timeShiftEnd = moment(get(shift, 'timeEnded'), 'hh:mm');
+            const timeShiftStart = moment(get(shift, 'timeStarted'), 'HH:mm');
+            const timeShiftEnd = moment(get(shift, 'timeEnded'), 'HH:mm');
 
             const shiftLastedMins = timeShiftEnd.diff(timeShiftStart, 'minutes');
 
@@ -166,7 +173,7 @@ module.exports.checkin = async (req, res, next) => {
                 diffMins = shiftLastedMins;
             }
 
-            const duration = moment.utc().startOf('day').add(diffMins, 'minutes').format('H:mm');
+            const duration = moment.utc().startOf('day').add(diffMins, 'minutes').format('HH:mm');
 
             await timeCheckout.punchOut(checkin, duration);
 
