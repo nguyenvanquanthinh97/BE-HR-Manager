@@ -173,14 +173,14 @@ module.exports.checkin = async (req, res, next) => {
 
             const duration = moment.utc().startOf('day').add(diffMins, 'minutes').format('HH:mm');
 
-            await timeCheckout.punchOut(checkin, duration);
+            await timeCheckout.punchOut(checkin, duration, zoneName);
 
             const timeCheckin = await TimeCheckin.findOneById(get(checkout, '_id'));
             res.status(201).json({ message: "Checkout Success", timeCheckin });
             return;
         }
 
-        const timeCheckin = new TimeCheckin(null, companyId, officeId, userId, checkin, null, null, false, shiftId);
+        const timeCheckin = new TimeCheckin(null, companyId, officeId, userId, checkin, null, null, false, shiftId, zoneName);
         await timeCheckin.punchIn();
 
         res.status(201).json({ message: "Checkin success", timeCheckin });

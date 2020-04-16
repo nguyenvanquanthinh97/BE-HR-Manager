@@ -6,6 +6,7 @@ const moment = require('moment-timezone');
 const { ROLE } = require('../constant');
 const Office = require('../model/office-workplace');
 const Company = require('../model/company');
+const TimeCheckin = require('../model/time-checkin');
 
 module.exports.createOffice = async (req, res, next) => {
     const name = get(req.body, 'name');
@@ -243,6 +244,94 @@ module.exports.getOfficeDetail = async (req, res, next) => {
             throw error;
         }
         res.status(200).json({ message: 'get office Info success', office });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.getCheckins = async (req, res, next) => {
+    const role = req.role;
+    const officeId = get(req.params, 'officeId');
+    const dateQuery = get(req.body, 'dateQuery');
+
+    const validRoles = [ROLE.hr, ROLE.administrator];
+    if (!validRoles.includes(role)) {
+        const error = new Error('Unauthorization');
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    try {
+        const office = await Office.findById(officeId);
+        if (!office) {
+            const error = new Error('OfficeId is not valid');
+            error.statusCode = 404;
+            throw error;
+        }
+        const timeCheckins = await TimeCheckin.findByDate(officeId, dateQuery);
+        res.status(200).json({ message: 'Fetch Checkins sucess', timeCheckins });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.approveCheckins = async (req, res, next) => {
+    const role = req.role;
+    const checkinIds = get(req.body, 'checkinIds');
+
+    const schema = Joi.object.keys({
+        checkinIds: Joi.array().items(Joi.string())
+    });
+
+    const { error } = schema.validate({ checkinIds });
+
+    if (error) {
+        const err = new Error(error);
+        err.statusCode = 422;
+        return next(err);
+    }
+
+    const validRoles = [ROLE.hr, ROLE.administrator];
+    if (!validRoles.includes(role)) {
+        const error = new Error('Unauthorization');
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    try {
+        await TimeCheckin.approveCheckins(checkinIds);
+        res.status(201).json({ message: "success update" });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.cancelCheckinApprovals = async (req, res, next) => {
+    const role = req.role;
+    const checkinIds = get(req.body, 'checkinIds');
+
+    const schema = Joi.object.keys({
+        checkinIds: Joi.array().items(Joi.string())
+    });
+
+    const { error } = schema.validate({ checkinIds });
+
+    if (error) {
+        const err = new Error(error);
+        err.statusCode = 422;
+        return next(err);
+    }
+
+    const validRoles = [ROLE.hr, ROLE.administrator];
+    if (!validRoles.includes(role)) {
+        const error = new Error('Unauthorization');
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    try {
+        await TimeCheckin.cancelCheckinApprovals(checkinIds);
+        res.status(201).json({ message: "Success Update" });
     } catch (error) {
         next(error);
     }
