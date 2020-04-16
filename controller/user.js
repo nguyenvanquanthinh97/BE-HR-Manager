@@ -187,6 +187,7 @@ module.exports.checkin = async (req, res, next) => {
 
         res.status(201).json({ message: "Checkin success", timeCheckin });
     } catch (error) {
+        res.status(422).json({ error: error });
         next(error);
     }
 };
