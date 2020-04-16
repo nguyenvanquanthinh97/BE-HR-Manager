@@ -124,8 +124,6 @@ module.exports.checkin = async (req, res, next) => {
             coordinates: [longitude, latitude]
         };
 
-        // const timezone = `http://api.timezonedb.com/v2.1/get-time-zone?key=${process.env.API_TIMEZONEDB}&format=json&by=position&lat=${latitude}&lng=${longitude}`;
-
         const timezone = await TimeZone.getTimeZones(latitude, longitude);
 
         const zoneName = get(timezone, 'zoneName');
@@ -187,7 +185,6 @@ module.exports.checkin = async (req, res, next) => {
 
         res.status(201).json({ message: "Checkin success", timeCheckin });
     } catch (error) {
-        res.status(422).json({ error: error });
         next(error);
     }
 };
