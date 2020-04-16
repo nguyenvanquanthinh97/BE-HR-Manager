@@ -251,7 +251,7 @@ module.exports.getOfficeDetail = async (req, res, next) => {
 
 module.exports.getCheckins = async (req, res, next) => {
     const role = req.role;
-    const officeId = get(req.params, 'officeId');
+    const officeId = get(req.body, 'officeId');
     const dateQuery = get(req.body, 'dateQuery');
 
     const validRoles = [ROLE.hr, ROLE.administrator];

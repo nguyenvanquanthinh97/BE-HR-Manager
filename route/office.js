@@ -11,7 +11,7 @@ router.post('/create-shift/:officeId', authentication, officeController.addShift
 router.post('/edit/:officeId', authentication, officeController.editOffice);
 router.delete('/:officeId', authentication, officeController.deleteOffice);
 router.get('/:officeId', authentication, officeController.getOfficeDetail);
-router.post('/checkins/:officeId', authentication, officeController.getCheckins);
+router.post('/checkins', authentication, officeController.getCheckins);
 router.post('/checkins-approval', authentication, officeController.approveCheckins);
 router.post('/checkins-approval-cancel', authentication, officeController.cancelCheckinApprovals);
 
