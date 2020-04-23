@@ -68,14 +68,18 @@ module.exports = class TimeCheckin {
   static approveCheckins(checkinIds) {
     const db = getDB();
 
+    const ids = checkinIds.map(id => new ObjectId(id));
+
     return db.collection('timeCheckins')
-      .updateMany({ _id: { $in: checkinIds } }, { $set: { isConfirmed: true } });
+      .updateMany({ _id: { $in: ids } }, { $set: { isConfirmed: true } });
   }
 
   static cancelCheckinApprovals(checkinIds) {
     const db = getDB();
 
+    const ids = checkinIds.map(id => new ObjectId(id));
+
     return db.collection('timeCheckins')
-      .updateMany({ _id: { $in: checkinIds } }, { $set: { isConfirmed: false } });
+      .updateMany({ _id: { $in: ids } }, { $set: { isConfirmed: false } });
   }
 };
