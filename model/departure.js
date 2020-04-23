@@ -46,4 +46,14 @@ module.exports = class Departure {
             .find({ officeId: new ObjectId(officeId) })
             .toArray();
     }
+
+    static countDeparturesInCompanyByOfficeIds(officeIds) {
+        const db = getDB();
+
+        const ids = officeIds.map(officeId => new ObjectId(officeId));
+
+        return db.collection('departures')
+            .find({ officeId: { $in: ids } })
+            .count();
+    }
 };

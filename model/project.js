@@ -99,4 +99,12 @@ module.exports = class Project {
       .find({ "members.memberId": new ObjectId(memberId) }, { name: 1, description: 1 })
       .toArray();
   }
+
+  static countByCompanyId(companyId) {
+    const db = getDB();
+
+    return db.collection('projects')
+      .find({ companyId: new ObjectId(companyId) })
+      .count();
+  }
 };
