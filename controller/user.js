@@ -1,4 +1,4 @@
-const { get, omit } = require('lodash');
+const { get, set, omit } = require('lodash');
 const Joi = require('@hapi/joi');
 const moment = require('moment-timezone');
 
@@ -101,6 +101,7 @@ module.exports.getInfo = async (req, res, next) => {
 module.exports.checkin = async (req, res, next) => {
     const userId = req.userId;
     const companyId = req.companyId;
+    const username = req.username;
     const officeId = get(req.body, 'officeId');
     const shiftId = get(req.body, 'shiftId');
     const longitude = Number(get(req.body, 'longitude'));
@@ -129,7 +130,7 @@ module.exports.checkin = async (req, res, next) => {
         const zoneName = get(timezone, 'zoneName');
 
         const offices = await Office.findByGeo(location);
-        if(offices.length === 0) {
+        if (offices.length === 0) {
             const error = new Error("Invalid location checkin");
             error.statusCode = 422;
             throw error;
@@ -181,12 +182,21 @@ module.exports.checkin = async (req, res, next) => {
             await timeCheckout.punchOut(checkin, duration, zoneName);
 
             const timeCheckin = await TimeCheckin.findOneById(get(checkout, '_id'));
+
+            set(timeCheckin, 'username', username);
+            set(timeCheckin, 'officeName', get(office, 'name'));
+            set(timeCheckin, 'shiftName', get(shift, 'name'));
+
             res.status(201).json({ message: "Checkout Success", timeCheckin });
             return;
         }
 
         const timeCheckin = new TimeCheckin(null, companyId, officeId, userId, checkin, null, null, false, shiftId, zoneName);
         await timeCheckin.punchIn();
+
+        set(timeCheckin, 'username', username);
+        set(timeCheckin, 'officeName', get(office, 'name'));
+        set(timeCheckin, 'shiftName', get(shift, 'name'));
 
         res.status(201).json({ message: "Checkin success", timeCheckin });
     } catch (error) {
