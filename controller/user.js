@@ -129,6 +129,11 @@ module.exports.checkin = async (req, res, next) => {
         const zoneName = get(timezone, 'zoneName');
 
         const offices = await Office.findByGeo(location);
+        if(offices.length === 0) {
+            const error = new Error("Invalid location checkin");
+            error.statusCode = 422;
+            throw error;
+        }
 
         const officeIdx = offices.findIndex(office => String(get(office, '_id')) === String(officeId));
 
