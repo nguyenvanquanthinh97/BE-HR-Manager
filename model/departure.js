@@ -25,6 +25,13 @@ module.exports = class Departure {
             .updateOne({ _id: this._id }, { $push: { memberIds: memberId, username } });
     }
 
+    static findById(departureId) {
+        const db = getDB();
+
+        return db.collection('departures')
+            .findOne({ _id: new ObjectId(departureId) });
+    }
+
     static setLeaderId(leaderId) {
         const db = getDB();
 

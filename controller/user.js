@@ -5,7 +5,9 @@ const moment = require('moment-timezone');
 const { ROLE } = require('../constant');
 const User = require('../model/user');
 const Office = require('../model/office-workplace');
+const Departure = require('../model/departure');
 const TimeCheckin = require('../model/time-checkin');
+const Project = require('../model/project');
 const TimeZone = require('../utils/timezone');
 
 module.exports.assignShift = async (req, res, next) => {
@@ -91,8 +93,15 @@ module.exports.getInfo = async (req, res, next) => {
             error.statusCode = 401;
             throw error;
         }
+        const office = await Office.findById(get(user, "officeWorkplaceId"));
+        const departure = await Departure.findById(get(user, "departureId"));
+        const projects = await Project.findByMemberId(userId);
 
-        res.status(200).json({ message: "get user info success", user: omit(user, 'password') });
+        set(user, 'projectJoin', projects);
+        set(user, 'officeName', get(office, 'name'));
+        set(user, 'departureName', get(departure, 'name'));
+
+        res.status(200).json({ message: "get user info success", user: omit(user, 'password'), office });
     } catch (error) {
         next(error);
     }

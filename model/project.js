@@ -91,4 +91,12 @@ module.exports = class Project {
     return db.collection('projects')
       .findOne({ _id: new ObjectId(projectId) });
   }
+
+  static findByMemberId(memberId) {
+    const db = getDB();
+
+    return db.collection('projects')
+      .find({ "members.memberId": new ObjectId(memberId) }, { name: 1, description: 1 })
+      .toArray();
+  }
 };
