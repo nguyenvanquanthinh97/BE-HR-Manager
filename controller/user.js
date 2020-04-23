@@ -183,20 +183,12 @@ module.exports.checkin = async (req, res, next) => {
 
             const timeCheckin = await TimeCheckin.findOneById(get(checkout, '_id'));
 
-            set(timeCheckin, 'username', username);
-            set(timeCheckin, 'officeName', get(office, 'name'));
-            set(timeCheckin, 'shiftName', get(shift, 'name'));
-
             res.status(201).json({ message: "Checkout Success", timeCheckin });
             return;
         }
 
-        const timeCheckin = new TimeCheckin(null, companyId, officeId, userId, checkin, null, null, false, shiftId, zoneName);
+        const timeCheckin = new TimeCheckin(null, companyId, officeId, get(office, 'name'), userId, username, checkin, null, null, false, shiftId, get(shift, 'name'), zoneName);
         await timeCheckin.punchIn();
-
-        set(timeCheckin, 'username', username);
-        set(timeCheckin, 'officeName', get(office, 'name'));
-        set(timeCheckin, 'shiftName', get(shift, 'name'));
 
         res.status(201).json({ message: "Checkin success", timeCheckin });
     } catch (error) {

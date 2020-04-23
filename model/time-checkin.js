@@ -4,16 +4,19 @@ const moment = require('moment-timezone');
 const { getDB } = require('../config/database');
 
 module.exports = class TimeCheckin {
-  constructor(id, companyId, officeId, userId, checkin, checkout, duration, isConfirmed, shiftId, zoneName) {
+  constructor(id, companyId, officeId, officeName, userId, username, checkin, checkout, duration, isConfirmed, shiftId, shiftName, zoneName) {
     this._id = id ? new ObjectId(id) : null;
     this.companyId = companyId ? new ObjectId(companyId) : null;
     this.officeId = officeId ? new ObjectId(officeId) : null;
+    this.officeName = officeName;
     this.userId = userId ? new ObjectId(userId) : null;
+    this.username = username;
     this.checkin = checkin;
     this.checkout = checkout;
     this.duration = duration || 0;
     this.isConfirmed = isConfirmed ? true : false;
     this.shiftId = shiftId ? new ObjectId(shiftId) : null;
+    this.shiftName = shiftName;
     this.createdAt = zoneName ? moment().tz(zoneName).toDate() : moment().toDate();
     this.updatedAt = this.createdAt;
   }

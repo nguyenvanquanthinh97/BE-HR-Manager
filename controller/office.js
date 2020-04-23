@@ -268,7 +268,7 @@ module.exports.getCheckins = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
-        const timeCheckins = await TimeCheckin.findByDate(officeId, dateQuery);
+        let timeCheckins = await TimeCheckin.findByDate(officeId, dateQuery);
         res.status(200).json({ message: 'Fetch Checkins sucess', timeCheckins });
     } catch (error) {
         next(error);
@@ -279,7 +279,7 @@ module.exports.approveCheckins = async (req, res, next) => {
     const role = req.role;
     const checkinIds = get(req.body, 'checkinIds');
 
-    const schema = Joi.object.keys({
+    const schema = Joi.object().keys({
         checkinIds: Joi.array().items(Joi.string())
     });
 
@@ -310,7 +310,7 @@ module.exports.cancelCheckinApprovals = async (req, res, next) => {
     const role = req.role;
     const checkinIds = get(req.body, 'checkinIds');
 
-    const schema = Joi.object.keys({
+    const schema = Joi.object().keys({
         checkinIds: Joi.array().items(Joi.string())
     });
 
