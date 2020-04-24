@@ -34,7 +34,7 @@ module.exports = class User {
         let ids = userIds.map(userId => new ObjectId(userId));
 
         return db.collection('users')
-            .updateMany({_id: {$in: ids}}, {$set: shifts})
+            .updateMany({ _id: { $in: ids } }, { $set: shifts });
     }
 
     static findById(userId) {
@@ -83,8 +83,16 @@ module.exports = class User {
                     }
                 },
                 {
-                    $project: {_id: 1, username: 1, email: 1, role: 1, "office._id": 1, "office.name": 1, "departure._id": 1, "departure.name": 1}
+                    $project: { _id: 1, username: 1, email: 1, role: 1, "office._id": 1, "office.name": 1, "departure._id": 1, "departure.name": 1 }
                 }
             ]).toArray();
+    }
+
+    static countUsersInCompany(companyId) {
+        const db = getDB();
+
+        return db.collection('users')
+            .find({ companyId: new ObjectId(companyId) })
+            .count();
     }
 };

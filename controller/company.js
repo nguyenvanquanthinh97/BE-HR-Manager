@@ -51,8 +51,8 @@ module.exports.getStatistics = async (req, res, next) => {
         const officeIds = officeWorkplaces.map(office => office.officeId);
         const numOfDepartures = await Departure.countDeparturesInCompanyByOfficeIds(officeIds);
         const numOfProjects = await Project.countByCompanyId(companyId);
-
-        res.status(200).json({ message: "Get Statistics Success", numOfOffices, numOfDepartures, numOfProjects });
+        const numOfUsers = await User.countUsersInCompany(companyId);
+        res.status(200).json({ message: "Get Statistics Success", numOfOffices, numOfDepartures, numOfProjects, numOfUsers });
     } catch (error) {
         next(error);
     }

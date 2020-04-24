@@ -8,6 +8,6 @@ router.get('/get-one', authentication, companyController.getCompany);
 
 router.get('/get-staffs', authentication, companyController.getStaffs);
 
-router.get('/', authentication, companyController.getStatistics);
+router.get('/statistics', authentication, companyController.getStatistics);
 
 module.exports = router;
