@@ -88,6 +88,14 @@ module.exports = class User {
             ]).toArray();
     }
 
+    static findByCompanyIdWithLimitField(companyId) {
+        const db = getDB();
+
+        return db.collection('users')
+            .find({ companyId: new ObjectId(companyId) }, { username: 1, email: 1 })
+            .toArray();
+    }
+
     static countUsersInCompany(companyId) {
         const db = getDB();
 
