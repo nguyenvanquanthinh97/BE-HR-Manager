@@ -1,10 +1,12 @@
 const { ObjectId } = require('mongodb');
+const { get } = require('lodash');
 
 const { getDB } = require('../config/database');
 
 module.exports = class OKR {
   constructor(id, quarterId, title, level, companyId, officeId, departureId, userId, keyResultIds, prevOKRIds, assignId) {
     this._id = id ? new ObjectId(id) : null;
+    this.progress = 0;
     this.quarterId = quarterId ? new ObjectId(quarterId) : null;
     this.title = title;
     this.level = level;
@@ -53,10 +55,10 @@ module.exports = class OKR {
       .toArray();
   }
 
-  static deleteOKR(okrId, prevOKRIds = []) {
+  static deleteOKR(okrId, keyResultIds = []) {
     const db = getDB();
 
-    if (prevOKRIds.length === 0) {
+    if (keyResultIds.length === 0) {
       return db.collection('okrs')
         .deleteOne({ _id: new ObjectId(okrId) });
     }
@@ -85,5 +87,40 @@ module.exports = class OKR {
     return db.collection('okrs')
       .find({ _id: { $in: ids } })
       .toArray();
+  }
+
+  static updateProgress(updatedOKRsProgress) {
+    /* 
+    updatedOKRProgress = {
+      _id,
+      progress
+    }
+    */
+    const db = getDB();
+
+    const ids = [];
+    const cases = updatedOKRsProgress.map(okr => {
+      ids.push(new ObjectId(get(okr, '_id')));
+      return {
+        case: new ObjectId(get(okr, '_id')), then: get(okr, 'progress')
+      };
+    });
+
+    return db.collection('okrs')
+      .updateMany(
+        { _id: { $in: ids } },
+        [
+          {
+            $set: { progress: "$_id" }
+          },
+          {
+            $set: {
+              progress: {
+                $switch: {
+                  branches: cases
+                }
+              }
+            }
+          }]);
   }
 };

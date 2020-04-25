@@ -1,4 +1,4 @@
-const { get, set } = require('lodash');
+const { get, set, omit } = require('lodash');
 const Joi = require('@hapi/joi');
 const moment = require('moment-timezone');
 const { ObjectId } = require('mongodb');
@@ -122,7 +122,7 @@ module.exports.createOKR = async (req, res, next) => {
     const departureId = get(req.body, 'departureId');
     const userId = get(req.body, 'userId');
     const keyResultIds = get(req.body, 'keyResultIds', []);
-    const prevOKRIds = get(req.body, 'prevOKRIds', []);
+    let prevOKRIds = get(req.body, 'prevOKRIds', []);
     const assignId = get(req.body, 'assignId');
 
     const schema = Joi.object().keys({
@@ -140,12 +140,14 @@ module.exports.createOKR = async (req, res, next) => {
     const { error } = schema.validate({ quarterObjectiveId, title, level, officeId, departureId, userId, keyResultIds, prevOKRIds, assignId });
 
     if (error) {
+        console.log(error);
         const error = new Error(error);
         error.statusCode = 422;
         return next(error);
     }
 
     try {
+        prevOKRIds = prevOKRIds.map(okrId => new ObjectId(okrId));
         const okr = new OKR(null, quarterObjectiveId, title, level, companyId, officeId, departureId, userId, keyResultIds, prevOKRIds, assignId);
         const okrInserted = await okr.save();
         const okrId = get(okrInserted, 'insertedId');
@@ -157,6 +159,7 @@ module.exports.createOKR = async (req, res, next) => {
         set(okr, '_id', okrId);
         res.status(201).json({ message: "create okr success", okr });
     } catch (error) {
+        console.log(error);
         next(error);
     }
 };
@@ -184,7 +187,7 @@ module.exports.getQuarterObjectiveList = async (req, res, next) => {
 };
 
 module.exports.editQuarterObjective = async (req, res, next) => {
-    const quarterId = get(req.params, 'quarterId');
+    const quarterId = get(req.body, 'quarterId');
     const role = req.role;
     const validRole = [ROLE.administrator];
     const title = get(req.body, 'title');
@@ -228,15 +231,16 @@ module.exports.editQuarterObjective = async (req, res, next) => {
         };
 
         await QuarterObjective.updateByQuarterId(quarterId, updatedQuarterObjective);
+        res.status(202).json({ message: "edit success", updatedQuarterObjective });
     } catch (error) {
         next(error);
     }
 };
 
 module.exports.editOKR = async (req, res, next) => {
-    const okrId = get(req.params, 'okrId');
+    const okrId = get(req.body, 'okrId');
+    const updatedOKRsProgress = get(req.body, 'updatedOKRsProgress', []);
     const companyId = req.companyId;
-    const quarterObjectiveId = get(req.body, 'quarterObjectiveId');
     const title = get(req.body, 'title');
     const level = get(req.body, 'level');
     const officeId = get(req.body, 'officeId', '');
@@ -244,39 +248,70 @@ module.exports.editOKR = async (req, res, next) => {
     const userId = get(req.body, 'userId');
     const assignId = get(req.body, 'assignId');
 
+    const schema = Joi.object().keys({
+        okrId: Joi.string().required(),
+        updatedOKRsProgress: Joi.array().items(Joi.object().keys({
+            _id: Joi.string().required(),
+            progress: Joi.number().required()
+        })),
+        title: Joi.string().required(),
+        level: Joi.string().uppercase().valid(OKR_LEVEL.company, OKR_LEVEL.team, OKR_LEVEL.individual).required(),
+        officeId: Joi.string().optional().allow(null, ''),
+        departureId: Joi.string().optional().allow(null, ''),
+        userId: Joi.string().optional().allow(null, ''),
+        assignId: Joi.string().optional().allow(null, '')
+    });
+
+    const { error } = schema.validate({ okrId, updatedOKRsProgress, title, level, officeId, departureId, userId, assignId });
+
+    if (error) {
+        const error = new Error(error);
+        error.statusCode = 422;
+        return next(error);
+    }
+
     try {
         const updatedOKR = {
-            quarterId: new ObjectId(quarterObjectiveId),
             title,
             level,
-            companyId: new ObjectId(companyId),
-            officeId: new ObjectId(officeId),
-            departureId: new ObjectId(departureId),
-            userId: new ObjectId(userId),
-            assignId: new ObjectId(assignId)
+            companyId: companyId ? new ObjectId(companyId) : null,
+            officeId: officeId ? new ObjectId(officeId) : null,
+            departureId: departureId ? new ObjectId(departureId) : null,
+            userId: userId ? new ObjectId(userId) : null,
+            assignId: assignId ? new ObjectId(assignId) : null
         };
 
         const okr = new OKR(okrId);
         await okr.update(updatedOKR);
 
-        res.status(202).json({ message: "Update OKR Success", updatedOKR });
+        if (updatedOKRsProgress.length > 0) {
+            await OKR.updateProgress(updatedOKRsProgress);
+        }
+
+        res.status(202).json({ message: "Update OKR Success", updatedOKR, updatedOKRsProgress });
     } catch (error) {
+        console.log(error);
         next(error);
     }
 };
 
 module.exports.deleteOKR = async (req, res, next) => {
-    const okrId = get(req.params, 'okrId');
+    const okrId = get(req.body, 'okrId');
 
     try {
         const okr = await OKR.findOneById(okrId);
+        if (!okr) {
+            const error = new Error("Can not find okr");
+            error.statusCode = 401;
+            return next(error);
+        }
         const prevOKRIds = get(okr, 'prevOKRIds', []);
         const prevOKRIsLength = prevOKRIds.length;
         if (prevOKRIsLength > 0) {
             const prevOKRId = prevOKRIds[prevOKRIsLength - 1];
             await OKR.deleteChildOKR(prevOKRId, okrId);
         }
-        await OKR.deleteOKR(okrId, prevOKRIds);
+        await OKR.deleteOKR(okrId, get(okr, 'keyResultIds', []));
         res.status(201).json({ message: "Delete OKR Success" });
     } catch (error) {
         next(error);
@@ -303,8 +338,7 @@ module.exports.getOKRs = async (req, res, next) => {
             const okrIds = [...prevOKRIds, ...keyResultIds];
             const okrs = await OKR.findByOKRIds(okrIds);
 
-
-            for (let idx = 0; idx < totalLength - 1; idx++) {
+            for (let idx = 0; idx < totalLength; idx++) {
                 if (idx < prevOKRIdsLength) {
                     prevOKRs.push(okrs[idx]);
                     continue;
@@ -313,7 +347,7 @@ module.exports.getOKRs = async (req, res, next) => {
             }
         }
 
-        res.status(200).json({ message: "Get OKRS Success", prevOKRs, keyResults });
+        res.status(200).json({ message: "Get OKRS Success", prevOKRs, okr, keyResults });
     } catch (error) {
         next(error);
     }
@@ -342,11 +376,24 @@ module.exports.getCompanyInfo = async (req, res, next) => {
             };
         });
 
-        const departureInfos = await Departure.findDeparturesInCompanyByOfficeIds(officeIds);
-        const userInfos = await User.findByCompanyIdWithLimitField(companyId);
+        const departures = await Departure.findDeparturesInCompanyByOfficeIds(officeIds);
+        const departureInfos = departures.map(departure => ({
+            _id: departure._id,
+            officeId: get(departure, 'officeId'),
+            name: get(departure, 'name')
+        }));
+        let userInfos = await User.findByCompanyIdWithLimitField(companyId);
+
+        userInfos = userInfos.map(userInfo => {
+            return {
+                departureId: get(userInfo, '_id'),
+                members: get(userInfo, 'members', [])
+            };
+        });
 
         res.status(200).json({ message: "Get Company Info Success For OKRS", companyInfos, officeInfos, departureInfos, userInfos });
     } catch (error) {
+        console.log(error);
         next(error);
     }
 };

@@ -91,9 +91,11 @@ module.exports = class User {
     static findByCompanyIdWithLimitField(companyId) {
         const db = getDB();
 
-        return db.collection('users')
-            .find({ companyId: new ObjectId(companyId) }, { username: 1, email: 1 })
-            .toArray();
+        return db.collection('users').aggregate([
+            { $match: { companyId: new ObjectId(companyId) } },
+            { $group: { _id: "$departureId", members: { $push: "$$ROOT" } } },
+            { $project: { "members._id": 1, "members.username": 1, "members.email": 1 } }
+        ]).toArray();
     }
 
     static countUsersInCompany(companyId) {
