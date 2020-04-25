@@ -28,5 +28,4 @@ router.get('/quarter-objective/list', authentication, companyController.getQuart
 
 router.get('/quarter-objective/:quarterId', authentication, companyController.getAllOKRSByQuarterId);
 
-
 module.exports = router;
