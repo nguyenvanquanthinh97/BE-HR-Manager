@@ -221,8 +221,8 @@ module.exports.editQuarterObjective = async (req, res, next) => {
     }
 
     try {
-        const dateStartQuarter = moment(dateStart, 'YYYY-MM-DD');
-        const dateEndQuarter = moment(dateStartQuarter).add(3, 'months');
+        const dateStartQuarter = moment(dateStart, 'YYYY-MM-DD').toDate();
+        const dateEndQuarter = moment(dateStartQuarter).add(3, 'months').toDate();
 
         const updatedQuarterObjective = {
             title,
