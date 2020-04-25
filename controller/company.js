@@ -161,7 +161,7 @@ module.exports.createOKR = async (req, res, next) => {
     }
 };
 
-module.get.getAllOKRSByQuarterId = async (req, res, next) => {
+module.exports.getAllOKRSByQuarterId = async (req, res, next) => {
     const quarterId = get(req.params, 'quarterId');
 
     try {
