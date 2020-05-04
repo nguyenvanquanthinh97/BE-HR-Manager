@@ -16,4 +16,6 @@ router.post('/staff/signup', authentication, userController.addStaff);
 
 router.post('/reset-password', userController.resetPassword);
 
+router.get('/inactive/:userId', authentication, userController.inActiveUser);
+
 module.exports = router;

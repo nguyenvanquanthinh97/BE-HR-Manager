@@ -4,6 +4,12 @@ const { get } = require('lodash');
 const BlackList = require('../model/black-lists');
 
 module.exports = async (req, res, next) => {
+
+    if (!req.get('Authorization')) {
+        const error = new Error("Unauthention User");
+        res.statusCode = 401;
+        return next(error);
+    }
     const token = req.get('Authorization').split(' ')[1];
     let decodedToken;
     if (!token) {

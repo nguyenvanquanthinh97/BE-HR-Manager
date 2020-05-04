@@ -140,7 +140,6 @@ module.exports.createOKR = async (req, res, next) => {
     const { error } = schema.validate({ quarterObjectiveId, title, level, officeId, departureId, userId, keyResultIds, prevOKRIds, assignId });
 
     if (error) {
-        console.log(error);
         const error = new Error(error);
         error.statusCode = 422;
         return next(error);
@@ -159,7 +158,6 @@ module.exports.createOKR = async (req, res, next) => {
         set(okr, '_id', okrId);
         res.status(201).json({ message: "create okr success", okr });
     } catch (error) {
-        console.log(error);
         next(error);
     }
 };
@@ -290,7 +288,6 @@ module.exports.editOKR = async (req, res, next) => {
 
         res.status(202).json({ message: "Update OKR Success", updatedOKR, updatedOKRsProgress });
     } catch (error) {
-        console.log(error);
         next(error);
     }
 };
@@ -393,7 +390,6 @@ module.exports.getCompanyInfo = async (req, res, next) => {
 
         res.status(200).json({ message: "Get Company Info Success For OKRS", companyInfos, officeInfos, departureInfos, userInfos });
     } catch (error) {
-        console.log(error);
         next(error);
     }
 };

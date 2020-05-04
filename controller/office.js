@@ -7,8 +7,18 @@ const { ROLE } = require('../constant');
 const Office = require('../model/office-workplace');
 const Company = require('../model/company');
 const TimeCheckin = require('../model/time-checkin');
+const TimeZone = require('../utils/timezone');
 
 module.exports.createOffice = async (req, res, next) => {
+    const role = req.role;
+    const validRoles = [ROLE.administrator];
+
+    if (!validRoles.includes(role)) {
+        const error = new Error("This function only applies for Administrator");
+        error.statusCode = 422;
+        return next(error);
+    }
+
     const name = get(req.body, 'name');
     const address = get(req.body, 'address');
     const city = get(req.body, 'city');
@@ -34,7 +44,8 @@ module.exports.createOffice = async (req, res, next) => {
     }
 
     try {
-        const office = new Office(companyId, get(value, 'name'), get(value, 'address'), get(value, 'city'), get(value, 'timeStarted'), get(value, 'timeEnded'), null, null, null, { type: 'Point', coordinates: get(value, 'location') });
+        const zoneName = await TimeZone.getTimeZones(get(value, 'location')[1], get(value, 'location')[0]);
+        const office = new Office(companyId, get(value, 'name'), get(value, 'address'), get(value, 'city'), get(value, 'timeStarted'), get(value, 'timeEnded'), null, null, null, { type: 'Point', coordinates: get(value, 'location') }, get(zoneName, 'zoneName'));
 
         const officeInserted = await office.save();
 
@@ -144,7 +155,7 @@ module.exports.getUserDepartureOffice = async (req, res, next) => {
             let departObj = {
                 _id: departure._id,
                 name: departure.name,
-                memberIds: departure.memberIds
+                members: departure.members
             };
             return departObj;
         });
@@ -203,8 +214,25 @@ module.exports.editOffice = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
+
+        let updatedOffice = {
+            name: get(value, 'name'),
+            address: get(value, 'address'),
+            city: get(value, 'city'),
+            timeStarted: get(value, 'timeStarted'),
+            timeEnded: get(value, 'timeEnded'),
+            location
+        };
+
+        if (get(location, 'coordinates', []).length > 0) {
+            const coordinates = get(location, 'coordinates');
+            const zoneName = await TimeZone.getTimeZones(coordinates[0], coordinates[1]);
+
+            set(updatedOffice, 'zoneName', zoneName);
+        }
+
         office = new Office(null, null, null, null, null, null, null, null, office._id);
-        const result = await office.updateOffice({ name: get(value, 'name'), address: get(value, 'address'), city: get(value, 'city'), timeStarted: get(value, 'timeStarted'), timeEnded: get(value, 'timeEnded'), location });
+        const result = await office.updateOffice(updatedOffice);
 
         res.status(201).json({ message: "Edit Office Success" });
     } catch (error) {
@@ -249,15 +277,25 @@ module.exports.getOfficeDetail = async (req, res, next) => {
     }
 };
 
-module.exports.getCheckins = async (req, res, next) => {
+module.exports.getCheckinsDate = async (req, res, next) => {
     const role = req.role;
     const officeId = get(req.body, 'officeId');
-    const dateQuery = get(req.body, 'dateQuery');
+    const dateFrom = get(req.body, 'dateFrom');
+    const dateTo = get(req.body, 'dateTo');
 
     const validRoles = [ROLE.hr, ROLE.administrator];
     if (!validRoles.includes(role)) {
         const error = new Error('Unauthorization');
         error.statusCode = 401;
+        return next(error);
+    }
+
+    const validDateFrom = moment(dateFrom, 'DD-MM-YYYY', true).isValid();
+    const validDateTo = moment(dateTo, 'DD-MM-YYYY', true).isValid();
+
+    if (!validDateFrom || !validDateTo) {
+        const error = new Error('DateFrom and DateTo must have format(DD-MM-YYYY)');
+        error.statusCode = 422;
         return next(error);
     }
 
@@ -268,7 +306,7 @@ module.exports.getCheckins = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
-        let timeCheckins = await TimeCheckin.findByDate(officeId, dateQuery);
+        let timeCheckins = await TimeCheckin.findByDate(officeId, dateFrom, dateTo);
         res.status(200).json({ message: 'Fetch Checkins sucess', timeCheckins });
     } catch (error) {
         next(error);
@@ -332,6 +370,58 @@ module.exports.cancelCheckinApprovals = async (req, res, next) => {
     try {
         await TimeCheckin.cancelCheckinApprovals(checkinIds);
         res.status(201).json({ message: "Success Update" });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.getApprovalCheckins = async (req, res, next) => {
+    const role = req.role;
+    const officeId = get(req.query, 'officeId');
+    const page = parseInt(get(req.query, 'page', 1));
+
+    const validRoles = [ROLE.hr, ROLE.administrator];
+    if (!validRoles.includes(role)) {
+        const error = new Error('Unauthorization');
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    try {
+        const office = await Office.findById(officeId);
+        if (!office) {
+            const error = new Error('OfficeId is not valid');
+            error.statusCode = 404;
+            throw error;
+        }
+        let timeCheckins = await TimeCheckin.findApprovalCheckins(officeId, page);
+        res.status(200).json({ message: 'Fetch Checkins sucess', timeCheckins });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.getUnapprovalCheckins = async (req, res, next) => {
+    const role = req.role;
+    const officeId = get(req.query, 'officeId');
+    const page = parseInt(get(req.query, 'page', 1));
+
+    const validRoles = [ROLE.hr, ROLE.administrator];
+    if (!validRoles.includes(role)) {
+        const error = new Error('Unauthorization');
+        error.statusCode = 401;
+        return next(error);
+    }
+
+    try {
+        const office = await Office.findById(officeId);
+        if (!office) {
+            const error = new Error('OfficeId is not valid');
+            error.statusCode = 404;
+            throw error;
+        }
+        let timeCheckins = await TimeCheckin.findUnapprovalCheckins(officeId, page);
+        res.status(200).json({ message: 'Fetch Checkins sucess', timeCheckins });
     } catch (error) {
         next(error);
     }

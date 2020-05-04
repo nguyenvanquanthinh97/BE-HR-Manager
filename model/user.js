@@ -1,7 +1,6 @@
 const { ObjectId } = require('mongodb');
 const { getDB } = require('../config/database');
 
-
 module.exports = class User {
     constructor(username, email, companyId, role, password, officeWorkplaceId, departureId, id) {
         this.username = username,
@@ -12,6 +11,8 @@ module.exports = class User {
         this._id = id ? new ObjectId(id) : null;
         this.officeWorkplaceId = officeWorkplaceId ? new ObjectId(officeWorkplaceId) : null;
         this.departureId = departureId ? new ObjectId(departureId) : null;
+        this.actived = true;
+        this.inActivingUserId = null;
     }
 
     save() {
@@ -26,6 +27,13 @@ module.exports = class User {
 
         return db.collection('users')
             .updateOne({ _id: new ObjectId(this._id) }, { $set: { password: newPassword } });
+    }
+
+    static setInactiveUser(userId, inActivingUserId) {
+        const db = getDB();
+
+        return db.collection('users')
+            .updateOne({ _id: new ObjectId(userId) }, { $set: { actived: false, inActivingUserId: new ObjectId(inActivingUserId) } });
     }
 
     static assignShiftByIds(userIds, shifts) {
@@ -102,7 +110,7 @@ module.exports = class User {
         const db = getDB();
 
         return db.collection('users')
-            .find({ companyId: new ObjectId(companyId) })
+            .find({ companyId: new ObjectId(companyId), actived: true })
             .count();
     }
 };

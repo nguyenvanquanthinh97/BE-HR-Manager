@@ -4,7 +4,7 @@ const moment = require('moment-timezone');
 const { getDB } = require('../config/database');
 
 module.exports = class TimeCheckin {
-  constructor(id, companyId, officeId, officeName, userId, username, checkin, checkout, duration, isConfirmed, shiftId, shiftName, zoneName) {
+  constructor(id, companyId, officeId, officeName, userId, username, checkin, checkout, duration, late, isConfirmed, shiftId, shiftName, zoneName) {
     this._id = id ? new ObjectId(id) : null;
     this.companyId = companyId ? new ObjectId(companyId) : null;
     this.officeId = officeId ? new ObjectId(officeId) : null;
@@ -14,6 +14,7 @@ module.exports = class TimeCheckin {
     this.checkin = checkin;
     this.checkout = checkout;
     this.duration = duration || 0;
+    this.lateDuration = late || 0;
     this.isConfirmed = isConfirmed ? true : false;
     this.shiftId = shiftId ? new ObjectId(shiftId) : null;
     this.shiftName = shiftName;
@@ -52,16 +53,76 @@ module.exports = class TimeCheckin {
       .findOne({ _id: new ObjectId(id) });
   }
 
-  static findByDate(officeId, dateQuery) {
+  static findByDate(officeId, dateFrom, dateTo) {
     const db = getDB();
 
     return db.collection('timeCheckins')
-      .find({
-        officeId: new ObjectId(officeId), $and: [
-          { updatedAt: { $gte: moment(dateQuery, 'MM-DD-YYYY').toDate() } },
-          { updatedAt: { $lt: moment(dateQuery, 'MM-DD-YYYY').add(1, 'days').toDate() } }
+      .aggregate(
+        [
+          {
+            $match: {
+              officeId: new ObjectId(officeId),
+              $and: [
+                { updatedAt: { $gte: moment(dateFrom, 'DD-MM-YYYY').toDate() } },
+                { updatedAt: { $lt: moment(dateTo, 'DD-MM-YYYY').toDate() } }
+              ]
+            }
+          },
+          {
+            $group: {
+              _id: {
+                userId: "$userId",
+                username: "$username"
+              },
+              totalWorkDuration: { $sum: '$duration' },
+              totalLateDuration: { $sum: '$lateDuration' },
+              checkins: {
+                $push: "$$ROOT"
+              }
+            }
+          },
+          {
+            $project: {
+              userId: 1,
+              username: 1,
+              totalWorkDuration: 1,
+              totalLateDuration: 1,
+              "checkins.checkin.dateChecked": 1,
+              "checkins.checkout.dateChecked": 1,
+              "checkins.shiftId": 1,
+              "checkins.shiftName": 1
+            }
+          }
         ]
+      )
+      .toArray();
+  }
+
+  static findApprovalCheckins(officeId, page = 1) {
+    const db = getDB();
+    const items = 10;
+
+    return db.collection('timeCheckins')
+      .find({
+        officeId: new ObjectId(officeId),
+        isConfirmed: true
       })
+      .skip((page - 1) * items)
+      .limit(items)
+      .toArray();
+  }
+
+  static findUnapprovalCheckins(officeId, page = 1) {
+    const db = getDB();
+    const items = 10;
+
+    return db.collection('timeCheckins')
+      .find({
+        officeId: new ObjectId(officeId),
+        isConfirmed: false
+      })
+      .skip((page - 1) * items)
+      .limit(items)
       .toArray();
   }
 
@@ -81,5 +142,17 @@ module.exports = class TimeCheckin {
 
     return db.collection('timeCheckins')
       .updateMany({ _id: { $in: ids } }, { $set: { isConfirmed: false } });
+  }
+
+  static findByUserId(userId, page = 1) {
+    const db = getDB();
+    const items = 10;
+
+    return db.collection('timeCheckins')
+      .find({ userId: new ObjectId(userId) })
+      .sort({ updatedAt: -1 })
+      .skip((page - 1) * items)
+      .limit(items)
+      .toArray();
   }
 };

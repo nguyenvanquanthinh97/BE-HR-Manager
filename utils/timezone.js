@@ -6,3 +6,16 @@ module.exports.getTimeZones = async (latitude, longtitude) => {
         const data = response.json();
         return data;
 };
+
+module.exports.transformMinutesToHHmmFormat = (minutes) => {
+        const hour = parseInt(minutes / 60);
+        const minute = parseInt(minutes) % parseInt(60);
+        return `${hour}:${minute}`;
+};
+
+module.exports.transformHHmmFormatToMinutes = (time) => {
+        const hour = parseInt(time.split(':')[0]);
+        const minute = parseInt(time.split(':')[1]);
+
+        return hour * 60 + minute;
+};

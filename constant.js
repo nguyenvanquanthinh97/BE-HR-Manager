@@ -10,3 +10,9 @@ module.exports.OKR_LEVEL = {
     team: 'TEAM',
     individual: 'INDIVIDUAL'
 };
+
+module.exports.WEEKLY_PLANNING_STATUS = {
+    planning: 'PLANNING',
+    done: 'DONE',
+    problems: "PROBLEMS"
+}

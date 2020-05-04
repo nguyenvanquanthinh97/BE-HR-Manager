@@ -2,13 +2,13 @@ const { ObjectId } = require('mongodb');
 const { getDB } = require('../config/database');
 
 module.exports = class Departure {
-    constructor(officeId, name, memberIds, leaderId, isAnotherDeparture, id) {
+    constructor(officeId, name, members, leader, isAnotherDeparture, id) {
+        this._id = id ? new ObjectId(id) : null;
         this.officeId = new ObjectId(officeId);
         this.name = name;
-        this.memberIds = memberIds || [];
-        this.leaderId = leaderId ? new ObjectId(leaderId) : null;
+        this.members = members || [];
+        // this.leader = leader;
         this.isAnotherDeparture = isAnotherDeparture ? new ObjectId(isAnotherDeparture) : null;
-        this._id = id ? new ObjectId(id) : null;
     }
 
     save() {
@@ -21,8 +21,13 @@ module.exports = class Departure {
     addMember(memberId, username) {
         const db = getDB();
 
+        const member = {
+            userId: new ObjectId(memberId),
+            username
+        };
+
         return db.collection('departures')
-            .updateOne({ _id: this._id }, { $push: { memberIds: memberId, username } });
+            .updateOne({ _id: this._id }, { $push: { members: member } });
     }
 
     static findById(departureId) {
@@ -32,12 +37,17 @@ module.exports = class Departure {
             .findOne({ _id: new ObjectId(departureId) });
     }
 
-    static setLeaderId(leaderId) {
-        const db = getDB();
+    // static setLeader(departureId, leaderId, leaderUsername) {
+    //     const db = getDB();
 
-        return db.collection('departures')
-            .updateOne({ _id: this._id }, { $set: { leaderId: leaderId } });
-    }
+    //     const leader = {
+    //         userId: new ObjectId(leaderId),
+    //         username: leaderUsername
+    //     };
+
+    //     return db.collection('departures')
+    //         .updateOne({ _id: this._id }, { $set: { leader: leader } });
+    // }
 
     static findByOfficeId(officeId) {
         const db = getDB();
@@ -65,5 +75,12 @@ module.exports = class Departure {
         return db.collection('departures')
             .find({ officeId: { $in: ids } })
             .count();
+    }
+
+    static findByCompanyIdAndOfficeId(companyId, officeId) {
+        const db = getDB();
+
+        return db.collection('departures')
+            
     }
 };

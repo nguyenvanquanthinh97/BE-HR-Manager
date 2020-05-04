@@ -1,4 +1,4 @@
-const { get, set } = require('lodash');
+const { get, set, omit } = require('lodash');
 const Joi = require('@hapi/joi');
 const EmailTemplate = require('email-templates');
 const sgMail = require('@sendgrid/mail');
@@ -106,6 +106,14 @@ module.exports.login = async (req, res, next) => {
 
     try {
         const user = await User.findByEmail(get(value, 'email'));
+
+        const actived = get(user, 'actived', true);
+        if (!actived) {
+            const error = new Error("user is inactive");
+            error.statusCode = 401;
+            return next(error);
+        }
+
         if (!user) {
             const error = new Error("Invalid Email or Password");
             error.statusCode = 401;
@@ -268,5 +276,39 @@ module.exports.resetPassword = async (req, res, next) => {
         res.status(201).json({ message: 'Account Reset Password Success' });
     } catch (error) {
         return next(error);
+    }
+};
+
+module.exports.inActiveUser = async (req, res, next) => {
+    const userId = req.userId;
+    const role = req.role;
+    const companyId = req.companyId;
+    const validRoles = [ROLE.administrator, ROLE.hr];
+
+    const inactivedUserId = get(req.params, 'userId');
+
+    if (!validRoles.includes(role)) {
+        const error = new Error("Your role is not enough to do this");
+        error.statusCode = 422;
+        return next(error);
+    }
+
+    try {
+        const inactivedUser = await User.findById(inactivedUserId);
+        if (inactivedUser === ROLE.administrator) {
+            const error = new Error("Sorry can not inactive this user");
+            error.statusCode = 422;
+            throw (error);
+        }
+        if (String(get(inactivedUser, 'companyId')) !== String(companyId)) {
+            const error = new Error("This user is not in your company");
+            error.statusCode = 404;
+            throw (error);
+        }
+        await User.setInactiveUser(inactivedUserId, userId);
+        const user = await User.findById(inactivedUserId);
+        res.status(201).json({ message: 'success', inactivedUser: omit(user, "password") });
+    } catch (error) {
+        next(error);
     }
 };

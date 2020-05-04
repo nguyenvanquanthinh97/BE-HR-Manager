@@ -3,7 +3,7 @@ const { ObjectId } = require('mongodb');
 const User = require('./user');
 const { getDB } = require('../config/database');
 module.exports = class OfficeWorkplace {
-    constructor(companyId, name, address, city, timeStarted, timeEnded, departures, shifts, id, location) {
+    constructor(companyId, name, address, city, timeStarted, timeEnded, departures, shifts, id, location, zoneName) {
         this.companyId = new ObjectId(companyId);
         this.name = name;
         this.address = address;
@@ -13,6 +13,7 @@ module.exports = class OfficeWorkplace {
         this.shifts = shifts || [];
         this._id = id ? new ObjectId(id) : null;
         this.location = location;
+        this.zoneName = zoneName;
     }
 
     save() {
