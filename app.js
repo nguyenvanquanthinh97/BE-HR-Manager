@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const { get } = require('lodash');
 
 const mongoDB = require('./config/database.js');
+const { cloudinaryConfig } = require('./config/cloudinaryConfig');
 
 const authRoute = require('./route/auth');
 const userRoute = require('./route/user');
@@ -28,6 +29,8 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     next();
 });
+
+app.use(cloudinaryConfig);
 
 app.use('/auth', authRoute);
 app.use('/user', userRoute);

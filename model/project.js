@@ -100,6 +100,13 @@ module.exports = class Project {
       .toArray();
   }
 
+  static updateMemberUsername(companyId, memberId, username) {
+    const db = getDB();
+
+    return db.collection('projects')
+      .updateOne({ companyId: new ObjectId(companyId), "members.memberId": new ObjectId(memberId) }, { $set: { "members.$.username": username } });
+  }
+
   static countByCompanyId(companyId) {
     const db = getDB();
 

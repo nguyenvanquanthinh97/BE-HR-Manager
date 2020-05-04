@@ -1,7 +1,10 @@
+const Path = require('path');
+
 const { get, set, omit } = require('lodash');
 const Joi = require('@hapi/joi');
 const moment = require('moment-timezone');
 const { ObjectId } = require('mongodb');
+const Datauri = require('datauri/parser');
 
 const { ROLE, WEEKLY_PLANNING_STATUS } = require('../constant');
 const User = require('../model/user');
@@ -12,6 +15,93 @@ const Project = require('../model/project');
 const WeeklyPlanning = require('../model/weekly-planning');
 const TimeZone = require('../utils/timezone');
 const OffDayPermission = require('../model/off-days');
+// const { uploader } = require('../config/cloudinaryConfig');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/uploader');
+
+module.exports.editInfo = async (req, res, next) => {
+    const userId = req.userId;
+    const companyId = req.companyId;
+    let selectedUserId = get(req.body, 'userId', null);
+    const role = req.role;
+    const validRoles = [ROLE.administrator, ROLE.hr];
+
+    const username = get(req.body, 'username');
+    const updatedOfficeWorkplaceId = get(req.body, 'officeWorkplaceId', '');
+    const updatedDepartureId = get(req.body, 'departureId', '');
+    const imgData = get(req.body, 'imgData', null);
+
+    if (selectedUserId) {
+        if (!validRoles.includes(role)) {
+            const error = new Error("Your role is not enough to do this");
+            error.statusCode = 422;
+            return next(error);
+        }
+    } else {
+        selectedUserId = userId;
+    }
+
+    try {
+        const user = await User.findById(selectedUserId);
+
+        const img = get(user, 'img', '');
+        const officeWorkplaceId = get(user, 'officeWorkplaceId', '');
+        const departureId = get(user, 'departureId', '');
+
+        if (String(companyId) !== String(get(user, 'companyId'))) {
+            const error = new Error("This user is not in your company");
+            error.statusCode = 422;
+            throw (error);
+        }
+
+        let updatedUser = omit(user, ['_id', 'email', 'role', 'password', 'companyId', 'actived']);
+
+        ////////////test
+        if (imgData) {
+            // const image = req.file;
+            // const datauri = new Datauri();
+            // datauri.format(Path.extname(req.file.originalname).toString(), image.buffer);
+
+            const newImgUrl = await uploadToCloudinary(imgData);
+            if (img) {
+                const urlSplits = img.split('/');
+                const fileName = urlSplits[urlSplits.length - 1];
+                const publicId = fileName.split('.')[0];
+                await deleteFromCloudinary(publicId);
+            }
+
+            set(updatedUser, 'img', newImgUrl);
+        }
+
+        if (get(updatedUser, 'username') !== username) {
+            set(updatedUser, 'username', username);
+            await Project.updateMemberUsername(companyId, selectedUserId, username);
+            if (departureId !== '') {
+                await Departure.updateMemberUsername(departureId, selectedUserId, username);
+            }
+        }
+
+        if(validRoles.includes(role)) {
+            set(updatedUser, 'officeWorkplaceId', updatedOfficeWorkplaceId !== '' ? new ObjectId(updatedOfficeWorkplaceId) : '');
+            if (departureId === '' && updatedDepartureId !== '') {
+                set(updatedUser, 'departureId', new ObjectId(updatedDepartureId));
+                const departure = new Departure(updatedOfficeWorkplaceId, null, null, null, null, departureId);
+                await departure.addMember(selectedUserId, username);
+            }
+            if (String(updatedDepartureId) !== String(departureId) && departureId !== '') {
+                await Departure.removeMember(departureId, selectedUserId);
+                const updatedDeparture = new Departure(null, null, null, null, null, updatedDepartureId);
+                await updatedDeparture.addMember(selectedUserId, username);
+            }
+        }
+
+        await User.updateUserInfo(selectedUserId, updatedUser);
+        res.status(200).json({ message: 'updated success', updatedUser });
+
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+};
 
 module.exports.assignShift = async (req, res, next) => {
     const userIds = get(req.body, 'userIds');

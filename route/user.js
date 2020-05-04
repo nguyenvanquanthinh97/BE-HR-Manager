@@ -4,6 +4,8 @@ const router = express.Router();
 const authentication = require('../middleware/authentication');
 const userController = require('../controller/user');
 
+router.post('/edit', authentication, userController.editInfo);
+
 router.post('/assign-shift', authentication, userController.assignShift);
 
 router.post('/checkin', authentication, userController.checkin);

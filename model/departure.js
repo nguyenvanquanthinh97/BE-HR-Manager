@@ -77,10 +77,17 @@ module.exports = class Departure {
             .count();
     }
 
-    static findByCompanyIdAndOfficeId(companyId, officeId) {
+    static updateMemberUsername(id, userId, username) {
         const db = getDB();
 
         return db.collection('departures')
-            
+            .updateOne({ _id: new ObjectId(id), "members.userId": new ObjectId(userId) }, { $set: { "members.$.username": username } });
+    }
+
+    static removeMember(id, userId) {
+        const db = getDB();
+
+        return db.collection('departures')
+            .updateOne({ id: new ObjectId(id) }, { $pull: { members: { userId: new ObjectId(userId) } } });
     }
 };

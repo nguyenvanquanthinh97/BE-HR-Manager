@@ -13,6 +13,7 @@ module.exports = class User {
         this.departureId = departureId ? new ObjectId(departureId) : null;
         this.actived = true;
         this.inActivingUserId = null;
+        this.img = null;
     }
 
     save() {
@@ -27,6 +28,13 @@ module.exports = class User {
 
         return db.collection('users')
             .updateOne({ _id: new ObjectId(this._id) }, { $set: { password: newPassword } });
+    }
+
+    static updateUserInfo(userId, updateduser) {
+        const db = getDB();
+
+        return db.collection('users')
+            .updateOne({ _id: new ObjectId(userId) }, { $set: updateduser });
     }
 
     static setInactiveUser(userId, inActivingUserId) {
