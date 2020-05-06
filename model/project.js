@@ -50,11 +50,13 @@ module.exports = class Project {
       .updateOne({ _id: this._id }, { $push: { members: { $each: members } } });
   }
 
-  assignTask(members, taskId, deadline) {
+  assignTask(memberIds, taskId, deadline) {
     const db = getDB();
 
+    const ids = memberIds.map(id => new ObjectId(id));
+
     return db.collection('projects')
-      .updateOne({ _id: this._id, "taskList._id": new ObjectId(taskId) }, { $set: { "taskList.$.assigns": members, "taskList.$.deadline": deadline } });
+      .updateOne({ _id: this._id, "taskList._id": new ObjectId(taskId) }, { $set: { "taskList.$.assigns": ids, "taskList.$.deadline": deadline } });
   }
 
   editStatusTask(taskId, status) {
@@ -113,5 +115,37 @@ module.exports = class Project {
     return db.collection('projects')
       .find({ companyId: new ObjectId(companyId) })
       .count();
+  }
+
+  static removeMembers(projectId, memberIds) {
+    const db = getDB();
+
+    let ids = memberIds.map(id => new ObjectId(id));
+
+    return db.collection('projects')
+      .updateOne(
+        {
+          _id: new ObjectId(projectId),
+          "taskList.assigns": {
+            $in: ids
+          }
+        },
+        [
+          {
+            $pull: {
+              members: {
+                memberId: { $in: ids }
+              }
+            }
+          },
+          {
+            $set: {
+              "taskList.$.assigns": {
+                $pull: { $in: ids }
+              }
+            }
+          }
+        ]
+      );
   }
 };

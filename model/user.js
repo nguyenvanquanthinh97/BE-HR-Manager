@@ -99,7 +99,7 @@ module.exports = class User {
                     }
                 },
                 {
-                    $project: { _id: 1, username: 1, email: 1, role: 1, "office._id": 1, "office.name": 1, "departure._id": 1, "departure.name": 1 }
+                    $project: { _id: 1, username: 1, email: 1, role: 1, img: 1, shifts: 1, actived: 1, "office._id": 1, "office.name": 1, "departure._id": 1, "departure.name": 1 }
                 }
             ]).toArray();
     }

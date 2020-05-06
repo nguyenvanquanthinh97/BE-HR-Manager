@@ -3,6 +3,7 @@ const Joi = require('@hapi/joi');
 const { ObjectId } = require('mongodb');
 const moment = require('moment-timezone');
 
+const { ROLE } = require('../constant');
 const Project = require('../model/project');
 const User = require('../model/user');
 
@@ -189,7 +190,7 @@ module.exports.addTask = async (req, res, next) => {
 module.exports.addMembers = async (req, res, next) => {
   const userId = req.userId;
   const projectId = get(req.body, 'projectId');
-  const members = get(req.body, 'members', []);
+  let members = get(req.body, 'members', []);
 
   if (members.length === 0) {
     const error = new Error('members is empty');
@@ -227,6 +228,12 @@ module.exports.addMembers = async (req, res, next) => {
       throw error;
     }
     project = new Project(project._id);
+
+    members = members.map(member => ({
+      ...member,
+      memberId: new ObjectId(get(member, 'memberId'))
+    }));
+
     await project.addMembers(members);
     const mems = get(project, 'members');
     mems.push(members);
@@ -466,6 +473,36 @@ module.exports.editTaskInfo = async (req, res, next) => {
 
     await project.editTaskInfo(taskId, task);
     res.status(201).json({ message: 'Create Task Success', task: task });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.removeMember = async (req, res, next) => {
+  const userId = req.userId;
+  const role = req.role;
+  const validRoles = [ROLE.administrator];
+  const projectId = get(req.body, 'projectId');
+  const ids = get(req.body, 'ids');
+
+  try {
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      const error = new Error("Can not find your project");
+      error.statusCode = 404;
+      throw error;
+    }
+    const projectMangerId = get(project, 'projectManagerId', '');
+    if (String(projectMangerId) !== String(userId) && !validRoles.includes(role)) {
+      const error = new Error("Your role is not enough to do this function");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    await Project.removeMembers(projectId, ids);
+    const updatedProject = await Project.findById(projectId);
+    res.status(201).json({ message: 'success', updatedProject });
   } catch (error) {
     next(error);
   }

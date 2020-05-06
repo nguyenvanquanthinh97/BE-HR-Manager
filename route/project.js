@@ -14,5 +14,6 @@ router.post('/assign-task', authentication, projectController.assignTask);
 router.post('/edit-task-status', authentication, projectController.editTaskStatus);
 router.post('/add-task-comment', authentication, projectController.addCommentTask);
 router.post('/edit-task-info', authentication, projectController.editTaskInfo);
+router.post('/remove-members', authentication, projectController.removeMember);
 
 module.exports = router;
