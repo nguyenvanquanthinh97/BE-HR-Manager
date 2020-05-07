@@ -78,7 +78,7 @@ module.exports = class TimeCheckin {
               totalLateDuration: { $sum: '$lateDuration' },
               checkins: {
                 $push: "$$ROOT"
-              }
+              },
             }
           },
           {
@@ -87,7 +87,10 @@ module.exports = class TimeCheckin {
               username: 1,
               totalWorkDuration: 1,
               totalLateDuration: 1,
+              "checkins._id": 1,
               "checkins.checkin.dateChecked": 1,
+              "checkins.officeId": 1,
+              "checkins.officeName": 1,
               "checkins.checkout.dateChecked": 1,
               "checkins.shiftId": 1,
               "checkins.shiftName": 1

@@ -226,9 +226,9 @@ module.exports.editOffice = async (req, res, next) => {
 
         if (get(location, 'coordinates', []).length > 0) {
             const coordinates = get(location, 'coordinates');
-            const zoneName = await TimeZone.getTimeZones(coordinates[0], coordinates[1]);
+            const zoneName = await TimeZone.getTimeZones(coordinates[1], coordinates[0]);
 
-            set(updatedOffice, 'zoneName', zoneName);
+            set(updatedOffice, 'zoneName', get(zoneName, 'zoneName'));
         }
 
         office = new Office(null, null, null, null, null, null, null, null, office._id);
