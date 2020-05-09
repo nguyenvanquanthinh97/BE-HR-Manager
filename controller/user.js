@@ -577,7 +577,7 @@ module.exports.getOffDayPermissionList = async (req, res, next) => {
     try {
         const offDayPermissionList = await OffDayPermission.findAll(companyId, page);
 
-        res.status(200).json({ message: 'get off day permission list success', offDayPermissionList });
+        res.status(200).json({ message: 'get off day permission list success', offDayPermissionList: offDayPermissionList[0] });
 
     } catch (error) {
         next(error);

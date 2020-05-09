@@ -107,23 +107,30 @@ module.exports = class OffDayPermission {
           }
         },
         {
+          $group: { _id: null, totalOffdays: { $sum: 1 }, offDays: { $push: "$$ROOT" } }
+        },
+        {
           $project: {
-            companyId: 1,
-            userId: 1,
-            fromDate: 1,
-            toDate: 1,
-            duration: 1,
-            reason: 1,
-            description: 1,
-            accepted: 1,
-            verifyingUser: 1,
-            deniedReason: 1,
-            "userInfo.username": 1,
-            "userInfo.email": 1,
-            "userInfo.role": 1,
-            "userInfo.officeWorkplaceId": 1,
-            "userInfo.departureId": 1,
-            "userInfo.shifts": 1,
+            _id: 0,
+            totalOffdays: 1,
+            "offDays._id": 1,
+            "offDays.companyId": 1,
+            "offDays.userId": 1,
+            "offDays.fromDate": 1,
+            "offDays.toDate": 1,
+            "offDays.totalOffdays": 1,
+            "offDays.duration": 1,
+            "offDays.reason": 1,
+            "offDays.description": 1,
+            "offDays.accepted": 1,
+            "offDays.verifyingUser": 1,
+            "offDays.deniedReason": 1,
+            "offDays.userInfo.username": 1,
+            "offDays.userInfo.email": 1,
+            "offDays.userInfo.role": 1,
+            "offDays.userInfo.officeWorkplaceId": 1,
+            "offDays.userInfo.departureId": 1,
+            "offDays.userInfo.shifts": 1,
           }
         },
         {
@@ -157,7 +164,7 @@ module.exports = class OffDayPermission {
 
     let isAccepted = isApproval;
 
-    if(typeof(isApproval) === 'string') {
+    if (typeof (isApproval) === 'string') {
       isAccepted = isApproval === 'true' ? true : false;
       isAccepted = isApproval === 'null' ? null : isAccepted;
     }

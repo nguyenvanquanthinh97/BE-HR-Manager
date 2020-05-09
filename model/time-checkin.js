@@ -93,7 +93,8 @@ module.exports = class TimeCheckin {
               "checkins.officeName": 1,
               "checkins.checkout.dateChecked": 1,
               "checkins.shiftId": 1,
-              "checkins.shiftName": 1
+              "checkins.shiftName": 1,
+              "checkins.isConfirmed": 1
             }
           }
         ]
