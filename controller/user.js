@@ -98,7 +98,6 @@ module.exports.editInfo = async (req, res, next) => {
         res.status(200).json({ message: 'updated success', updatedUser });
 
     } catch (error) {
-        console.log(error);
         next(error);
     }
 };
@@ -606,10 +605,12 @@ module.exports.approveOffDayPermission = async (req, res, next) => {
     }
 
     try {
+        const user = await User.findById(userId);
         const acceptingUser = {
             userId: new ObjectId(userId),
             username,
-            email
+            email,
+            img: get(user, 'img')
         };
 
         await OffDayPermission.approvePermission(approvalIds, acceptingUser);
@@ -649,10 +650,12 @@ module.exports.approveOffDayPermissionDeny = async (req, res, next) => {
     }
 
     try {
+        const user = await User.findById(userId);
         const denyingUser = {
             userId: new ObjectId(userId),
             username,
-            email
+            email,
+            img: get(user, 'img')
         };
 
         await OffDayPermission.DenyPermission(offDayId, denyingUser, deniedReason);

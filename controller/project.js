@@ -20,21 +20,13 @@ module.exports.getProjectList = async (req, res, next) => {
 
 module.exports.getProject = async (req, res, next) => {
   const projectId = get(req.params, 'projectId');
-  const userId = req.userId;
 
   try {
-    const project = await Project.findById(projectId);
-    const projectManagerId = get(project, 'projectManagerId', '');
-    const members = get(project, 'members');
+    let project = await Project.findById(projectId);
+    project = project[0];
     if (!project) {
       const error = new Error('Invalid ProjectId');
       error.statusCode = 404;
-      throw error;
-    }
-    const memberIdx = members.findIndex(member => member.memberId.toString() === userId.toString());
-    if (memberIdx === -1 && projectManagerId.toString() !== userId.toString()) {
-      const error = new Error("Not enough authority to create a task");
-      error.statusCode = 401;
       throw error;
     }
     res.status(200).json({ message: 'Get Project Success', project });

@@ -110,7 +110,7 @@ module.exports = class User {
         return db.collection('users').aggregate([
             { $match: { companyId: new ObjectId(companyId) } },
             { $group: { _id: "$departureId", members: { $push: "$$ROOT" } } },
-            { $project: { "members._id": 1, "members.username": 1, "members.email": 1 } }
+            { $project: { "members._id": 1, "members.username": 1, "members.email": 1, "members.img": 1 } }
         ]).toArray();
     }
 

@@ -125,6 +125,8 @@ module.exports = class OffDayPermission {
             "offDays.accepted": 1,
             "offDays.verifyingUser": 1,
             "offDays.deniedReason": 1,
+            "offDays.userInfo._id": 1,
+            "offDays.userInfo.img": 1,
             "offDays.userInfo.username": 1,
             "offDays.userInfo.email": 1,
             "offDays.userInfo.role": 1,

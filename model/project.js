@@ -91,7 +91,50 @@ module.exports = class Project {
     const db = getDB();
 
     return db.collection('projects')
-      .findOne({ _id: new ObjectId(projectId) });
+      // .findOne({ _id: new ObjectId(projectId) });
+      .aggregate([
+        {
+          $match: { _id: new ObjectId(projectId) }
+        },
+        {
+          $lookup:
+          {
+            from: 'users',
+            localField: 'members.memberId',
+            foreignField: '_id',
+            as: 'members'
+          }
+        },
+        {
+          $lookup:
+          {
+            from: 'users',
+            localField: 'projectManagerId',
+            foreignField: '_id',
+            as: 'projectManagerInfo'
+          }
+        },
+        {
+          $project:
+          {
+            companyId: 1,
+            name: 1,
+            prefixedCode: 1,
+            description: 1,
+            statuses: 1,
+            taskList: 1,
+            'members._id': 1,
+            'members.username': 1,
+            'members.email': 1,
+            'members.img': 1,
+            projectManagerId: 1,
+            'projectManagerInfo.email': 1,
+            'projectManagerInfo.img': 1,
+            projectManagerUsername: 1
+          }
+        }
+      ])
+      .toArray();
   }
 
   static findByMemberId(memberId) {
