@@ -87,11 +87,10 @@ module.exports = class Project {
       .toArray();
   }
 
-  static findById(projectId) {
+  static getDetailById(projectId) {
     const db = getDB();
 
     return db.collection('projects')
-      // .findOne({ _id: new ObjectId(projectId) });
       .aggregate([
         {
           $match: { _id: new ObjectId(projectId) }
@@ -135,6 +134,13 @@ module.exports = class Project {
         }
       ])
       .toArray();
+  }
+
+  static findById(projectId) {
+    const db = getDB();
+
+    return db.collection('projects')
+      .findOne({ _id: new ObjectId(projectId) });
   }
 
   static findByMemberId(memberId) {

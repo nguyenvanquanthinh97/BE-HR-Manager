@@ -22,7 +22,7 @@ module.exports.getProject = async (req, res, next) => {
   const projectId = get(req.params, 'projectId');
 
   try {
-    let project = await Project.findById(projectId);
+    let project = await Project.getDetailById(projectId);
     project = project[0];
     if (!project) {
       const error = new Error('Invalid ProjectId');
