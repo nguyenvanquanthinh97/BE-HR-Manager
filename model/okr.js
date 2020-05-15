@@ -100,9 +100,10 @@ module.exports = class OKR {
 
     const ids = [];
     const cases = updatedOKRsProgress.map(okr => {
-      ids.push(new ObjectId(get(okr, '_id')));
+      const _id = new ObjectId(get(okr, '_id'));
+      ids.push(_id);
       return {
-        case: new ObjectId(get(okr, '_id')), then: get(okr, 'progress')
+        case: { $eq: ["$_id", new ObjectId(_id)] }, then: Number(get(okr, 'progress'))
       };
     });
 
@@ -111,16 +112,16 @@ module.exports = class OKR {
         { _id: { $in: ids } },
         [
           {
-            $set: { progress: "$_id" }
-          },
-          {
             $set: {
               progress: {
                 $switch: {
-                  branches: cases
+                  branches: cases,
+                  default: 0
                 }
               }
             }
-          }]);
+          }
+        ]
+      );
   }
 };
