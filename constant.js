@@ -7,7 +7,7 @@ module.exports.ROLE = {
 
 module.exports.OKR_LEVEL = {
     company: 'COMPANY',
-    team: 'TEAM',
+    team: 'DEPARTURE',
     individual: 'INDIVIDUAL'
 };
 
