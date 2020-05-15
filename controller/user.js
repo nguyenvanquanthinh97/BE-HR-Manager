@@ -80,7 +80,7 @@ module.exports.editInfo = async (req, res, next) => {
             }
         }
 
-        if(validRoles.includes(role)) {
+        if (validRoles.includes(role)) {
             set(updatedUser, 'officeWorkplaceId', updatedOfficeWorkplaceId !== '' ? new ObjectId(updatedOfficeWorkplaceId) : '');
             if (departureId === '' && updatedDepartureId !== '') {
                 set(updatedUser, 'departureId', new ObjectId(updatedDepartureId));
@@ -185,13 +185,20 @@ module.exports.getInfo = async (req, res, next) => {
             error.statusCode = 401;
             throw error;
         }
-        const office = await Office.findById(get(user, "officeWorkplaceId"));
-        const departure = await Departure.findById(get(user, "departureId"));
+        const officeWorkplaceId = get(user, "officeWorkplaceId");
+        const departureId = get(user, "departureId");
+
+        let office, departure;
+        if (officeWorkplaceId && departureId) {
+            office = await Office.findById(officeWorkplaceId);
+            departure = await Departure.findById(departureId);
+
+            set(user, 'officeName', get(office, 'name'));
+            set(user, 'departureName', get(departure, 'name'));
+        }
         const projects = await Project.findByMemberId(userId);
 
         set(user, 'projectJoin', projects);
-        set(user, 'officeName', get(office, 'name'));
-        set(user, 'departureName', get(departure, 'name'));
 
         res.status(200).json({ message: "get user info success", user: omit(user, 'password'), office });
     } catch (error) {
