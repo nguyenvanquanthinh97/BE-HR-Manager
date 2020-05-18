@@ -3,8 +3,8 @@ const { getDB } = require('../config/database');
 
 module.exports = class User {
     constructor(username, email, companyId, role, password, officeWorkplaceId, departureId, id) {
-        this.username = username,
-            this.email = email;
+        this.username = username;
+        this.email = email;
         this.companyId = companyId ? new ObjectId(companyId) : null;
         this.role = role;
         this.password = password;
