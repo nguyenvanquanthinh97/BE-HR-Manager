@@ -360,8 +360,7 @@ module.exports.addCommentTask = async (req, res, next) => {
 
   const schema = Joi.object().keys({
     projectId: Joi.string().required(),
-    taskId: Joi.string().required(),
-    comment: Joi.string().required()
+    taskId: Joi.string().required()
   });
 
   const { error, value } = schema.validate({ projectId, taskId, comment });
