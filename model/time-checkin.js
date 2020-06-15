@@ -29,11 +29,11 @@ module.exports = class TimeCheckin {
       .insertOne(this);
   }
 
-  punchOut(checkout, duration, zoneName) {
+  punchOut(checkout, duration, zoneName, isConfirmed = false) {
     const db = getDB();
 
     return db.collection('timeCheckins')
-      .updateOne({ _id: this._id }, { $set: { checkout: checkout, duration: duration, updatedAt: moment().tz(zoneName).toDate() } });
+      .updateOne({ _id: this._id }, { $set: { checkout: checkout, duration: duration, updatedAt: moment().tz(zoneName).toDate(), isConfirmed: Boolean(isConfirmed) } });
   }
 
   static findOneByUserId(userId) {

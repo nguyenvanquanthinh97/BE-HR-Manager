@@ -284,20 +284,28 @@ module.exports.checkin = async (req, res, next) => {
         if (checkout.length > 0) {
             checkout = checkout[0];
             const timeCheckout = new TimeCheckin(get(checkout, '_id', null));
+            const lateDuration = get(checkout, 'lateDuration', 0);
+            let isConfirmed = true;
 
             let diffMins = momentCheckinHHmm.diff(timeShiftStart, 'minutes');
             //let diffMins = moment().diff(moment(get(checkout, 'checkin.dateChecked'), "MM-DD-YYYY hh:mm:ss a"), 'minutes');
 
-            diffMins = diffMins - get(checkout, 'lateDuration', '0');
+            diffMins = diffMins - lateDuration;
             const shiftLastedMins = timeShiftEnd.diff(timeShiftStart, 'minutes');
 
-            if (diffMins > shiftLastedMins) {
+            if (diffMins > shiftLastedMins || diffMins === shiftLastedMins) {
                 diffMins = shiftLastedMins;
+            } else {
+                isConfirmed = false;
             }
 
             const duration = diffMins;
 
-            await timeCheckout.punchOut(checkin, duration, zoneName);
+            if (Number(lateDuration) > 0) {
+                isConfirmed = false;
+            }
+
+            await timeCheckout.punchOut(checkin, duration, zoneName, isConfirmed);
 
             const timeCheckin = await TimeCheckin.findOneById(get(checkout, '_id'));
 
