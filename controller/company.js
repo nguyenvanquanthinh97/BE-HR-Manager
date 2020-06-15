@@ -4,6 +4,7 @@ const moment = require('moment-timezone');
 const { ObjectId } = require('mongodb');
 
 const { ROLE, OKR_LEVEL } = require('../constant');
+const { compare2Arrays } = require('../utils/compare');
 const Company = require('../model/company');
 const User = require('../model/user');
 const Departure = require('../model/departure');
@@ -245,6 +246,11 @@ module.exports.editOKR = async (req, res, next) => {
     const departureId = get(req.body, 'departureId');
     const userId = get(req.body, 'userId');
     const assignId = get(req.body, 'assignId');
+    let projectIds = get(req.body, 'projectIds', []);
+
+    if (projectIds.length > 0) {
+        projectIds = projectIds.map(projectId => new ObjectId(projectId));
+    }
 
     const schema = Joi.object().keys({
         okrId: Joi.string().required(),
@@ -269,6 +275,19 @@ module.exports.editOKR = async (req, res, next) => {
     }
 
     try {
+        const currentOKR = await OKR.findOneById(okrId);
+
+        const currentProjectIds = get(currentOKR, 'projectIds', []).map(item => new ObjectId(item));
+
+        const isProjectIdsEqual = compare2Arrays(currentProjectIds, projectIds);
+
+        if (!isProjectIdsEqual) {
+            if (currentProjectIds.length > 0) {
+                await Project.removeOKRId(currentProjectIds);
+            }
+            await Project.setOKRId(projectIds, okrId);
+        }
+
         const updatedOKR = {
             title,
             level,
@@ -276,7 +295,8 @@ module.exports.editOKR = async (req, res, next) => {
             officeId: officeId ? new ObjectId(officeId) : null,
             departureId: departureId ? new ObjectId(departureId) : null,
             userId: userId ? new ObjectId(userId) : null,
-            assignId: assignId ? new ObjectId(assignId) : null
+            assignId: assignId ? new ObjectId(assignId) : null,
+            projectIds
         };
 
         const okr = new OKR(okrId);
@@ -389,6 +409,25 @@ module.exports.getCompanyInfo = async (req, res, next) => {
         });
 
         res.status(200).json({ message: "Get Company Info Success For OKRS", companyInfos, officeInfos, departureInfos, userInfos });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports.getLinkedProjects = async (req, res, next) => {
+    const okrId = get(req.params, 'okrId');
+    const companyId = req.companyId;
+
+    try {
+        const projects = await Project.findByOKRId(companyId, okrId);
+
+        if (projects.length === 0) {
+            const error = new Error("Can not find your projects with okrId you provided");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json({ message: "Get Projects Success", projects });
     } catch (error) {
         next(error);
     }

@@ -17,6 +17,7 @@ module.exports = class OKR {
     this.keyResultIds = keyResultIds || [];
     this.prevOKRIds = prevOKRIds || [];
     this.assignId = assignId ? new ObjectId(assignId) : null;
+    this.projectIds = [];
   }
 
   save() {

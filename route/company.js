@@ -22,10 +22,14 @@ router.post('/okr', authentication, companyController.createOKR);
 
 router.get('/okr/companyInfo', authentication, companyController.getCompanyInfo);
 
+router.get('/okr/:okrId/projects', authentication, companyController.getLinkedProjects);
+
 router.get('/okr/:okrId', authentication, companyController.getOKRs);
 
 router.post('/okr/edit', authentication, companyController.editOKR);
 
 router.post('/okr/delete', authentication, companyController.deleteOKR);
+
+
 
 module.exports = router;

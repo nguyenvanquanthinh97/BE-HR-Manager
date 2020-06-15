@@ -13,6 +13,7 @@ module.exports = class Project {
     this.members = members || [];
     this.projectManagerId = new ObjectId(projectManagerId);
     this.projectManagerUsername = projectManagerUsername;
+    this.okrId = null;
   }
 
   save() {
@@ -83,7 +84,7 @@ module.exports = class Project {
 
     return db.collection('projects')
       .find({ companyId: new ObjectId(companyId) })
-      .project({ name: 1, prefixedCode: 1, description: 1, members: 1, projectManagerId: 1, projectManagerUsername: 1 })
+      .project({ name: 1, prefixedCode: 1, description: 1, members: 1, projectManagerId: 1, projectManagerUsername: 1, okrId: 1 })
       .toArray();
   }
 
@@ -195,6 +196,60 @@ module.exports = class Project {
             }
           }
         ]
+      );
+  }
+
+  static findByOKRId(companyId, okrId) {
+    const db = getDB();
+
+    return db.collection('projects')
+      .find(
+        {
+          companyId: new ObjectId(companyId),
+          okrId: new ObjectId(okrId)
+        }
+      )
+      .project({ name: 1, prefixedCode: 1, description: 1, members: 1, projectManagerId: 1, projectManagerUsername: 1, okrId: 1 })
+      .toArray();
+  }
+
+  static removeOKRId(projectIds) {
+    const db = getDB();
+
+    let ids = projectIds.map(projectId => new ObjectId(projectId));
+
+    return db.collection('projects')
+      .updateMany(
+        {
+          _id: {
+            $in: ids
+          }
+        },
+        {
+          $set: {
+            okrId: null
+          }
+        }
+      );
+  }
+
+  static setOKRId(projectIds, okrId) {
+    const db = getDB();
+
+    let ids = projectIds.map(projectId => new ObjectId(projectId));
+
+    return db.collection('projects')
+      .updateMany(
+        {
+          _id: {
+            $in: ids
+          }
+        },
+        {
+          $set: {
+            okrId: new ObjectId(okrId)
+          }
+        }
       );
   }
 };
