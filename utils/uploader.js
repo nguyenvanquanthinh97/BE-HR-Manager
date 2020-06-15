@@ -10,6 +10,18 @@ module.exports.uploadToCloudinary = (image) => {
   });
 };
 
+module.exports.uploadFileToCloudinary = (file) => {
+  return new Promise((resolve, reject) => {
+    uploader.upload(file,
+      { resource_type: "raw" },
+      (err, url) => {
+        if (err) return reject(err);
+        return resolve(get(url, 'url'));
+      }
+    );
+  });
+};
+
 module.exports.deleteFromCloudinary = (publicId) => {
   return new Promise((resolve, reject) => {
     uploader.destroy(publicId, (err, result) => {

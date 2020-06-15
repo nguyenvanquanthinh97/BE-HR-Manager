@@ -4,6 +4,7 @@ const { ObjectId } = require('mongodb');
 const moment = require('moment-timezone');
 
 const { ROLE } = require('../constant');
+const { uploadFileToCloudinary } = require('../utils/uploader');
 const Project = require('../model/project');
 const User = require('../model/user');
 
@@ -354,7 +355,8 @@ module.exports.addCommentTask = async (req, res, next) => {
   const userId = req.userId;
   const taskId = get(req.body, 'taskId');
   const projectId = get(req.body, 'projectId');
-  const comment = get(req.body, 'comment');
+  let comment = get(req.body, 'comment');
+  const attachedFile = get(req.body, 'attachedFile', null);
 
   const schema = Joi.object().keys({
     projectId: Joi.string().required(),
@@ -392,6 +394,12 @@ module.exports.addCommentTask = async (req, res, next) => {
       throw error;
     }
     project = new Project(project._id);
+
+    if (attachedFile) {
+      const fileUrl = await uploadFileToCloudinary(attachedFile);
+
+      comment = comment.concat('  ', fileUrl);
+    }
 
     await project.addCommentTask(taskId, userId, comment);
     res.status(202).json({ message: "edit Status Success", projectId, taskId, userId, comment });
