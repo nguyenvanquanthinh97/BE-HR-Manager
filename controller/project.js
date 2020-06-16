@@ -363,7 +363,7 @@ module.exports.addCommentTask = async (req, res, next) => {
     taskId: Joi.string().required()
   });
 
-  const { error, value } = schema.validate({ projectId, taskId, comment });
+  const { error, value } = schema.validate({ projectId, taskId });
 
   if (error) {
     const err = new Error('Validation Fail');
