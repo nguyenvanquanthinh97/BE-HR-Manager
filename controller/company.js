@@ -246,10 +246,10 @@ module.exports.editOKR = async (req, res, next) => {
     const departureId = get(req.body, 'departureId');
     const userId = get(req.body, 'userId');
     const assignId = get(req.body, 'assignId');
-    let projectIds = get(req.body, 'projectIds', []);
+    let taskIds = get(req.body, 'taskIds', []);
 
-    if (projectIds.length > 0) {
-        projectIds = projectIds.map(projectId => new ObjectId(projectId));
+    if (taskIds.length > 0) {
+        taskIds = taskIds.map(taskId => new ObjectId(taskId));
     }
 
     const schema = Joi.object().keys({
@@ -277,16 +277,16 @@ module.exports.editOKR = async (req, res, next) => {
     try {
         const currentOKR = await OKR.findOneById(okrId);
 
-        const currentProjectIds = get(currentOKR, 'projectIds', []).map(item => new ObjectId(item));
+        // const currentTaskIds = get(currentOKR, 'taskIds', []).map(item => new ObjectId(item));
 
-        const isProjectIdsEqual = compare2Arrays(currentProjectIds, projectIds);
+        // const isTaskIdsEqual = compare2Arrays(currentTaskIds, taskIds);
 
-        if (!isProjectIdsEqual) {
-            if (currentProjectIds.length > 0) {
-                await Project.removeOKRId(currentProjectIds);
-            }
-            await Project.setOKRId(projectIds, okrId);
-        }
+        // if (!isTaskIdsEqual) {
+        //     if (currentTaskIds.length > 0) {
+        //         await Project.removeOKRId(currentTaskIds);
+        //     }
+        //     await Project.setOKRId(projectIds, okrId);
+        // }
 
         const updatedOKR = {
             title,
@@ -296,7 +296,7 @@ module.exports.editOKR = async (req, res, next) => {
             departureId: departureId ? new ObjectId(departureId) : null,
             userId: userId ? new ObjectId(userId) : null,
             assignId: assignId ? new ObjectId(assignId) : null,
-            projectIds
+            taskIds
         };
 
         const okr = new OKR(okrId);
