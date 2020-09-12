@@ -248,8 +248,14 @@ module.exports.editOKR = async (req, res, next) => {
     const assignId = get(req.body, 'assignId');
     let taskIds = get(req.body, 'taskIds', []);
 
+    /*
+    taskIds: {
+        projectId,
+        taskId
+    }
+     */
     if (taskIds.length > 0) {
-        taskIds = taskIds.map(taskId => new ObjectId(taskId));
+        taskIds = taskIds.map(({projectId, taskId}) => ({projectId, taskId: new ObjectId(taskId)}));
     }
 
     const schema = Joi.object().keys({
