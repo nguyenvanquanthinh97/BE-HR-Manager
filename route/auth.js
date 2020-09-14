@@ -14,6 +14,8 @@ router.get('/logout', authentication, userController.logout);
 
 router.post('/staff/signup', authentication, userController.addStaff);
 
+router.post('/staff/signupMany', authentication, userController.addStaffs);
+
 router.post('/reset-password', userController.resetPassword);
 
 router.get('/inactive/:userId', authentication, userController.inActiveUser);
