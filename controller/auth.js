@@ -364,7 +364,9 @@ module.exports.addStaffs = async (req, res, next) => {
 				html: result
 			});
 		});
-	} catch (err) {}
+	} catch (err) {
+        next(err);
+    }
 };
 
 module.exports.resetPassword = async (req, res, next) => {
