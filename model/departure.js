@@ -34,7 +34,7 @@ module.exports = class Departure {
 		const departuresObj = {};
 		let tmp;
 		members.forEach((member) => {
-			tmp = String(member.departureId);
+			tmp = member.departureId;
 			if (!departuresObj[tmp]) {
 				departuresObj[tmp] = [];
 			}

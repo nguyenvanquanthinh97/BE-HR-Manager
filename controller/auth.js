@@ -313,24 +313,24 @@ module.exports.addStaffs = async (req, res, next) => {
 
 		let tmp;
 		departures.forEach((depart) => {
-			tmp = String(depart._id);
+			tmp = depart._id;
 			if (!departuresObject[tmp]) {
 				departuresObject[tmp] = true;
 			}
 		});
 
-		const validStaffs = staffs.filter((staff) => Boolean(departuresObject[String(staff.departureId)]));
+		const validStaffs = staffs.filter((staff) => departuresObject[staff.departureId]);
 
 		const { insertedIds } = await User.addManyStaffs(validStaffs);
 
-        const insertedStaffs = await User.findByIds(companyId, insertedIds);
+		const insertedStaffs = await User.findByIds(companyId, insertedIds);
 
-        await Departure.addMembers(insertedStaffs);
+		await Departure.addMembers(insertedStaffs);
 
-		if (validStaffs.length === staffs.length) {
+		if (insertedIds.length === staffs.length) {
 			res.status(201).json({ message: 'All users successfully created !' });
 		} else {
-			res.status(201).json({ message: `Only ${validStaffs.length} staffs are successfully created !` });
+			res.status(201).json({ message: `Only ${insertedIds.length} staffs are successfully created !` });
 		}
 
 		// Send gmail
@@ -365,8 +365,8 @@ module.exports.addStaffs = async (req, res, next) => {
 			});
 		});
 	} catch (err) {
-        next(err);
-    }
+		next(err);
+	}
 };
 
 module.exports.resetPassword = async (req, res, next) => {
