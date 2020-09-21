@@ -145,6 +145,6 @@ module.exports = class User {
 	static countUsersInCompany(companyId) {
 		const db = getDB();
 
-		return db.collection('users').find({ companyId: new ObjectId(companyId), actived: true }).count();
+		return db.collection('users').find({ companyId: new ObjectId(companyId) }).count();
 	}
 };

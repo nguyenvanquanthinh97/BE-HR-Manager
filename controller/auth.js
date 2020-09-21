@@ -303,16 +303,12 @@ module.exports.addStaffs = async (req, res, next) => {
 		let defaultPassword = await bcrypt.genSalt(12).then((salt) => bcrypt.hash(process.env.DEFINED_PASSWORD, salt));
 		for (let idx = 0; idx < staffs.length; idx++) {
 			officeObj[staffs[idx].officeId] = true;
-			staffs[idx].officeId = new ObjectId(staffs[idx].officeId);
+			staffs[idx].officeWorkplaceId = new ObjectId(staffs[idx].officeId);
 			staffs[idx].departureId = new ObjectId(staffs[idx].departureId);
 			staffs[idx].role = staffs[idx].role.toUpperCase();
 			staffs[idx].companyId = new ObjectId(companyId);
 			staffs[idx].defaultPassword = defaultPassword;
 		}
-
-		// const office = new Office(companyId, null, null, null, null, null, null, null, officeId);
-		// let departures = await office.getAllDepartures();
-		// departures = get(departures[0], 'departures');
 
 		let departures = await Departure.findDeparturesInCompanyByOfficeIds(Object.keys(officeObj));
 
@@ -375,7 +371,7 @@ module.exports.addStaffs = async (req, res, next) => {
 				html: results[i]
 			});
 		}
-		
+
 	} catch (err) {
 		console.log(err);
 		next(err);
