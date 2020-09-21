@@ -278,10 +278,12 @@ module.exports.addStaffs = async (req, res, next) => {
 	}
 
 	const schema = Joi.array().items(
-		Joi.object.keys({
+		Joi.object().keys({
 			email: Joi.string().trim().email().required(),
 			username: Joi.string().trim().min(2).required(),
 			role: Joi.string().trim().valid(ROLE.staff, ROLE.hr, ROLE.leader),
+			office: Joi.string().trim().allow(null).optional(),
+			departure: Joi.string().trim().allow(null).optional(),
 			officeId: Joi.string().trim().required(),
 			departureId: Joi.string().trim().required()
 		})
@@ -292,22 +294,27 @@ module.exports.addStaffs = async (req, res, next) => {
 	if (error) {
 		const err = new Error('Validation fail!');
 		err.statusCode = 422;
+		console.log(error);
 		return next(err);
 	}
 
 	try {
+		const officeObj = {};
 		let defaultPassword = await bcrypt.genSalt(12).then((salt) => bcrypt.hash(process.env.DEFINED_PASSWORD, salt));
 		for (let idx = 0; idx < staffs.length; idx++) {
+			officeObj[staffs[idx].officeId] = true;
 			staffs[idx].officeId = new ObjectId(staffs[idx].officeId);
-			staffs[idx].departureId = new ObjectId(staff[idx].departureId);
+			staffs[idx].departureId = new ObjectId(staffs[idx].departureId);
 			staffs[idx].role = staffs[idx].role.toUpperCase();
 			staffs[idx].companyId = new ObjectId(companyId);
 			staffs[idx].defaultPassword = defaultPassword;
 		}
 
-		const office = new Office(companyId, null, null, null, null, null, null, null, officeId);
-		let departures = await office.getAllDepartures();
-		departures = get(departures[0], 'departures');
+		// const office = new Office(companyId, null, null, null, null, null, null, null, officeId);
+		// let departures = await office.getAllDepartures();
+		// departures = get(departures[0], 'departures');
+
+		let departures = await Departure.findDeparturesInCompanyByOfficeIds(Object.keys(officeObj));
 
 		const departuresObject = {};
 
@@ -321,7 +328,9 @@ module.exports.addStaffs = async (req, res, next) => {
 
 		const validStaffs = staffs.filter((staff) => departuresObject[staff.departureId]);
 
-		const { insertedIds } = await User.addManyStaffs(validStaffs);
+		const { insertedIds: insertedIdsObj } = await User.addManyStaffs(validStaffs);
+
+		const insertedIds = Object.values(insertedIdsObj);
 
 		const insertedStaffs = await User.findByIds(companyId, insertedIds);
 
@@ -341,9 +350,11 @@ module.exports.addStaffs = async (req, res, next) => {
 		});
 
 		const asyncResults = [];
+		const emails = [];
 
-		validStaffs.forEach(({ username }) => {
-			results.push(
+		validStaffs.forEach(({ username, email }) => {
+			emails.push(email);
+			asyncResults.push(
 				template.render('staff-request-change-password.pug', {
 					username,
 					usernameAdded: trustedUsername,
@@ -356,15 +367,17 @@ module.exports.addStaffs = async (req, res, next) => {
 
 		const results = await Promise.all(asyncResults);
 
-		results.forEach((result) => {
+		for (let i = 0; i < results.length; i++) {
 			sgMail.send({
-				to: get(value, 'email'),
+				to: emails[i],
 				from: 'no-reply@HR-Manager.com',
 				subject: 'Validation Email',
-				html: result
+				html: results[i]
 			});
-		});
+		}
+		
 	} catch (err) {
+		console.log(err);
 		next(err);
 	}
 };
