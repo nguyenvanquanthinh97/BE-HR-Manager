@@ -307,7 +307,8 @@ module.exports.addStaffs = async (req, res, next) => {
 			staffs[idx].departureId = new ObjectId(staffs[idx].departureId);
 			staffs[idx].role = staffs[idx].role.toUpperCase();
 			staffs[idx].companyId = new ObjectId(companyId);
-			staffs[idx].defaultPassword = defaultPassword;
+			staffs[idx].password = defaultPassword;
+			delete staffs[idx].officeId;
 		}
 
 		let departures = await Departure.findDeparturesInCompanyByOfficeIds(Object.keys(officeObj));
@@ -371,7 +372,6 @@ module.exports.addStaffs = async (req, res, next) => {
 				html: results[i]
 			});
 		}
-
 	} catch (err) {
 		console.log(err);
 		next(err);
