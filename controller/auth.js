@@ -294,7 +294,6 @@ module.exports.addStaffs = async (req, res, next) => {
 	if (error) {
 		const err = new Error('Validation fail!');
 		err.statusCode = 422;
-		console.log(error);
 		return next(err);
 	}
 
@@ -373,7 +372,6 @@ module.exports.addStaffs = async (req, res, next) => {
 			});
 		}
 	} catch (err) {
-		console.log(err);
 		next(err);
 	}
 };
